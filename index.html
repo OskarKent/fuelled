@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fuelled">
+<title>Fuelled</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{--bg:#0f0f0f;--surface:#1a1a1a;--surface2:#252525;--border:#2e2e2e;--text:#f0f0f0;--muted:#666;--hard:#e8ff47;--easy:#47c4ff;--rest:#c084fc;--prot:#ff6b35;--cal:#e8ff47;--carb:#34d399;--green:#4caf84;--danger:#ff4757;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;overscroll-behavior:none;-webkit-font-smoothing:antialiased;}
+.app{max-width:430px;margin:0 auto;height:100svh;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);}
+.header{padding:14px 18px 0;display:flex;justify-content:space-between;align-items:flex-start;flex-shrink:0;}
+.header-left{display:flex;flex-direction:column;gap:5px;}
+.wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;letter-spacing:2px;text-transform:uppercase;}
+.saved-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;color:var(--green);height:14px;}
+.user-toggle{display:flex;background:var(--surface);border-radius:6px;padding:2px;gap:2px;}
+.user-btn{padding:3px 10px;border-radius:4px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;background:transparent;color:var(--muted);transition:all .15s;}
+.user-btn.rob{background:var(--hard);color:#000;}
+.user-btn.hanna{background:#f472b6;color:#000;}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+.day-toggle{display:flex;background:var(--surface);border-radius:8px;padding:3px;gap:2px;}
+.toggle-btn{padding:5px 8px;border-radius:6px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:all .15s;background:transparent;color:var(--muted);}
+.toggle-btn.ah{background:var(--hard);color:#000;}.toggle-btn.ae{background:var(--easy);color:#000;}.toggle-btn.ar{background:var(--rest);color:#000;}
+.settings-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px;line-height:1;}
+.macros-section{padding:10px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex-shrink:0;}
+.macro-card{background:var(--surface);border-radius:12px;padding:10px;border:1px solid var(--border);}
+.macro-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.macro-num{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;line-height:1;margin-bottom:4px;}
+.macro-num.cc{color:var(--cal);}.macro-num.pp{color:var(--prot);}.macro-num.cb{color:var(--carb);}
+.macro-unit{font-size:11px;font-weight:400;}
+.macro-rem{font-size:10px;color:var(--muted);}
+.macro-rem .rv{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--text);}
+.macro-rem .hit{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--green);}
+.macro-rem .ov{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--danger);}
+.bar-track{height:3px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1);}
+.bcal{background:var(--cal);}.bprot{background:var(--prot);}.bcarb{background:var(--carb);}.bover{background:var(--danger);}
+.tab-bar{display:flex;border-bottom:1px solid var(--border);padding:0 18px;gap:14px;flex-shrink:0;}
+.tab{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:8px 0 7px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;}
+.tab.active{color:var(--text);border-bottom-color:var(--cal);}
+.view{display:flex;flex-direction:column;flex:1;overflow:hidden;}.hidden{display:none!important;}
+.sec-hdr{padding:10px 18px 8px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.sec-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.ghost-btn{background:none;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 10px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+.danger-btn{background:none;border:1px solid #2a2a2a;color:var(--danger);border-radius:6px;padding:4px 10px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+.search-wrap{padding:0 18px 10px;flex-shrink:0;}
+.search-inner{position:relative;}
+.search-box{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 36px 10px 14px;font-size:15px;color:var(--text);font-family:'Barlow',sans-serif;outline:none;}
+.search-box::placeholder{color:var(--muted);}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:2px 4px;line-height:1;display:none;}
+.food-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;}
+.food-item{display:flex;justify-content:space-between;align-items:center;padding:9px 18px;border-bottom:1px solid var(--border);}
+.food-tap{font-size:14px;font-weight:500;flex:1;padding-right:8px;line-height:1.2;cursor:pointer;}
+.food-tap:active{opacity:.6;}
+.unit-badge{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555;background:#222;border-radius:4px;padding:1px 4px;margin-left:4px;vertical-align:middle;}
+.food-right{display:flex;gap:4px;flex-shrink:0;align-items:center;}
+.fm{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;}
+.fm.c{color:var(--cal);}.fm.p{color:var(--prot);}.fm.cb{color:var(--carb);}
+.per-lbl{font-size:9px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;}
+.edit-icon{background:none;border:none;color:#444;font-size:14px;cursor:pointer;padding:4px 5px;line-height:1;}
+.food-empty{text-align:center;color:var(--muted);font-size:13px;padding:30px 0;font-style:italic;}
+.favs-scroll{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding:0 18px 20px;}
+.favs-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fav-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;transition:all .12s;position:relative;user-select:none;}
+.fav-card:active{background:var(--surface2);transform:scale(.97);}
+.fav-name{font-weight:600;font-size:13px;margin-bottom:2px;line-height:1.2;padding-right:14px;}
+.fav-portion{font-size:11px;color:var(--muted);margin-bottom:6px;}
+.fav-macros{display:flex;gap:5px;flex-wrap:wrap;}
+.fav-del{position:absolute;top:7px;right:7px;background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;line-height:1;padding:2px 4px;}
+.log-scroll{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;}
+.log-entry{display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border);}
+.log-name{font-size:14px;font-weight:500;}.log-detail{font-size:11px;color:var(--muted);margin-top:1px;}
+.log-right{display:flex;gap:5px;align-items:center;flex-shrink:0;}
+.lm{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;}
+.lm.c{color:var(--cal);}.lm.p{color:var(--prot);}.lm.cb{color:var(--carb);}
+.log-del-btn{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:2px 4px;margin-left:2px;line-height:1;}
+.log-empty{text-align:center;color:var(--muted);font-size:13px;padding:30px 18px;font-style:italic;}
+.history-scroll{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding:0 18px 20px;}
+.hist-day{margin-bottom:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;}
+.hist-day.today{border-color:#444;}
+.hist-date{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+.today-lbl{color:var(--cal);font-size:10px;}
+.dt-lbl{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);}
+.hist-macros{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.hist-mac{display:flex;flex-direction:column;gap:4px;}
+.hist-mac-top{display:flex;justify-content:space-between;align-items:baseline;}
+.hist-mac-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.hist-mac-val{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:900;}
+.hist-mac-val.c{color:var(--cal);}.hist-mac-val.p{color:var(--prot);}.hist-mac-val.cb{color:var(--carb);}
+.hist-mac-tgt{font-size:9px;color:var(--muted);}
+.hist-bar-track{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.hist-bar-fill{height:100%;border-radius:2px;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;z-index:100;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+.sheet{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:430px;margin:0 auto;border-top:1px solid var(--border);padding:22px 18px;padding-bottom:calc(22px + env(safe-area-inset-bottom));max-height:92svh;overflow-y:auto;}
+.sheet-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.sheet-sub{font-size:12px;color:var(--muted);margin-bottom:14px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:10px;font-family:'Barlow Condensed',sans-serif;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:16px;color:var(--text);font-family:'Barlow',sans-serif;outline:none;}
+.field input:focus{border-color:#555;}
+.row3{display:flex;gap:8px;}.row3 .field{flex:1;}
+.preview-row{display:flex;gap:8px;margin:12px 0;background:var(--bg);border-radius:10px;padding:10px 12px;}
+.preview-item{flex:1;text-align:center;}
+.preview-val{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;line-height:1;}
+.preview-val.c{color:var(--cal);}.preview-val.p{color:var(--prot);}.preview-val.cb{color:var(--carb);}
+.preview-lbl{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px;font-family:'Barlow Condensed',sans-serif;}
+.btn-row{display:flex;gap:8px;margin-top:14px;}
+.btn-p{flex:1;background:var(--cal);color:#000;border:none;border-radius:10px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;}
+.btn-s{background:var(--bg);color:var(--muted);border:1px solid var(--border);border-radius:10px;padding:13px 12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;}
+.btn-o{flex:1;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;cursor:pointer;}
+.sgrp{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;margin-top:4px;}
+.sgrp.h{color:var(--hard);}.sgrp.e{color:var(--easy);}.sgrp.r{color:var(--rest);}
+.divider{height:1px;background:var(--border);margin:12px 0;}
+.del-food-btn{width:100%;background:none;border:1px solid #2a2a2a;color:var(--danger);border-radius:10px;padding:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-top:8px;}
+.unit-toggle{display:flex;gap:8px;margin-bottom:10px;}
+.unit-toggle button{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+.unit-toggle button.sel{background:var(--surface2);color:var(--text);border-color:#555;}
+.no-data{color:var(--muted);font-size:11px;font-style:italic;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="wordmark">Fuelled</div>
+      <div class="saved-lbl" id="saved-lbl"></div>
+      <div class="user-toggle">
+        <button class="user-btn" id="btn-rob" onclick="setUser('rob')">Rob</button>
+        <button class="user-btn" id="btn-hanna" onclick="setUser('hanna')">Hanna</button>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="settings-btn" onclick="openSettings()">&#9881;</button>
+      <div class="day-toggle">
+        <button class="toggle-btn" id="btn-hard" onclick="setDayType('hard')">HARD</button>
+        <button class="toggle-btn" id="btn-easy" onclick="setDayType('easy')">EASY</button>
+        <button class="toggle-btn" id="btn-rest" onclick="setDayType('rest')">REST</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="macros-section">
+    <div class="macro-card">
+      <div class="macro-label">Calories</div>
+      <div class="macro-num cc" id="m-cal">0</div>
+      <div class="macro-rem" id="m-cal-rem"></div>
+      <div class="bar-track"><div class="bar-fill bcal" id="bar-cal" style="width:0%"></div></div>
+    </div>
+    <div class="macro-card">
+      <div class="macro-label">Protein</div>
+      <div class="macro-num pp" id="m-prot">0<span class="macro-unit">g</span></div>
+      <div class="macro-rem" id="m-prot-rem"></div>
+      <div class="bar-track"><div class="bar-fill bprot" id="bar-prot" style="width:0%"></div></div>
+    </div>
+    <div class="macro-card">
+      <div class="macro-label">Carbs</div>
+      <div class="macro-num cb" id="m-carb">0<span class="macro-unit">g</span></div>
+      <div class="macro-rem" id="m-carb-rem"></div>
+      <div class="bar-track"><div class="bar-fill bcarb" id="bar-carb" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active" id="tab-log"     onclick="setTab('log')">Today</div>
+    <div class="tab"        id="tab-foods"   onclick="setTab('foods')">Foods</div>
+    <div class="tab"        id="tab-favs"    onclick="setTab('favs')">Favourites</div>
+    <div class="tab"        id="tab-history" onclick="setTab('history')">Week</div>
+  </div>
+
+  <div class="view" id="view-log">
+    <div class="sec-hdr">
+      <span class="sec-title" id="log-count">0 entries</span>
+      <button class="danger-btn" id="clear-btn" onclick="clearLog()" style="display:none">Clear day</button>
+    </div>
+    <div class="log-scroll" id="log-scroll"></div>
+  </div>
+
+  <div class="view hidden" id="view-foods">
+    <div class="sec-hdr">
+      <span class="sec-title" id="food-count"></span>
+      <button class="ghost-btn" onclick="openAddFood()">+ Add food</button>
+    </div>
+    <div class="search-wrap">
+      <div class="search-inner">
+        <input class="search-box" id="food-search" type="search" placeholder="Search 238 foods..."
+          oninput="filterFoods()" onfocus="showClear()" onblur="hideClear()"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <button class="search-clear" id="search-clear" onmousedown="clearSearch(event)">&#215;</button>
+      </div>
+    </div>
+    <div class="food-list" id="food-list"></div>
+  </div>
+
+  <div class="view hidden" id="view-favs">
+    <div class="sec-hdr"><span class="sec-title">Tap to log</span></div>
+    <div class="favs-scroll"><div class="favs-grid" id="favs-grid"></div></div>
+  </div>
+
+  <div class="view hidden" id="view-history">
+    <div class="sec-hdr"><span class="sec-title" id="hist-title"></span></div>
+    <div class="history-scroll" id="history-scroll"></div>
+  </div>
+</div>
+
+<!-- LOG SHEET -->
+<div class="overlay hidden" id="sheet-food" onclick="closeSheet('sheet-food')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-title" id="fd-name"></div>
+    <div class="sheet-sub" id="fd-sub"></div>
+    <div class="field">
+      <label id="fd-qty-lbl">Amount (grams)</label>
+      <input id="fd-qty" type="number" inputmode="decimal" oninput="updatePreview()">
+    </div>
+    <div class="preview-row">
+      <div class="preview-item"><div class="preview-val c" id="pv-cal">&ndash;</div><div class="preview-lbl">kcal</div></div>
+      <div class="preview-item"><div class="preview-val p" id="pv-prot">&ndash;</div><div class="preview-lbl">protein g</div></div>
+      <div class="preview-item"><div class="preview-val cb" id="pv-carb">&ndash;</div><div class="preview-lbl">carbs g</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-s" onclick="closeSheet('sheet-food')">Cancel</button>
+      <button class="btn-o" onclick="doFav()">&#9734; Fav</button>
+      <button class="btn-p" onclick="doLog()">Log it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT FOOD SHEET -->
+<div class="overlay hidden" id="sheet-edit" onclick="closeSheet('sheet-edit')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-title" id="ef-title">Add Food</div>
+    <div class="field"><label>Food name</label><input id="ef-name" type="text" autocorrect="off" placeholder="e.g. Bun, Homemade (one)"></div>
+    <div class="unit-toggle">
+      <button id="ef-unit-g" class="sel" onclick="setEditUnit('g')">Per 100g</button>
+      <button id="ef-unit-each" onclick="setEditUnit('each')">Per item</button>
+    </div>
+    <div class="sheet-sub" id="ef-hint">Enter macros per 100g</div>
+    <div class="row3">
+      <div class="field"><label>Calories</label><input id="ef-cal" type="number" inputmode="decimal" placeholder="136"></div>
+      <div class="field"><label>Protein g</label><input id="ef-prot" type="number" inputmode="decimal" placeholder="25"></div>
+      <div class="field"><label>Carbs g</label><input id="ef-carb" type="number" inputmode="decimal" placeholder="0"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-s" onclick="closeSheet('sheet-edit')">Cancel</button>
+      <button class="btn-p" onclick="saveEditFood()">Save</button>
+    </div>
+    <button class="del-food-btn hidden" id="ef-del" onclick="deleteEditFood()">Delete food</button>
+  </div>
+</div>
+
+<!-- SETTINGS SHEET -->
+<div class="overlay hidden" id="sheet-settings" onclick="closeSheet('sheet-settings')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-title">Targets <span id="settings-user" style="font-size:13px;font-weight:400;color:var(--muted)"></span></div>
+    <div class="sgrp h">Hard Day</div>
+    <div class="row3">
+      <div class="field"><label>Calories</label><input id="s-hc" type="number" inputmode="numeric"></div>
+      <div class="field"><label>Protein g</label><input id="s-hp" type="number" inputmode="numeric"></div>
+      <div class="field"><label>Carbs g</label><input id="s-hcb" type="number" inputmode="numeric"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="sgrp e">Easy Day</div>
+    <div class="row3">
+      <div class="field"><label>Calories</label><input id="s-ec" type="number" inputmode="numeric"></div>
+      <div class="field"><label>Protein g</label><input id="s-ep" type="number" inputmode="numeric"></div>
+      <div class="field"><label>Carbs g</label><input id="s-ecb" type="number" inputmode="numeric"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="sgrp r">Rest Day</div>
+    <div class="row3">
+      <div class="field"><label>Calories</label><input id="s-rc" type="number" inputmode="numeric"></div>
+      <div class="field"><label>Protein g</label><input id="s-rp" type="number" inputmode="numeric"></div>
+      <div class="field"><label>Carbs g</label><input id="s-rcb" type="number" inputmode="numeric"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-s" onclick="closeSheet('sheet-settings')">Cancel</button>
+      <button class="btn-p" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const FOOD_DB_DEFAULT = [{"name": "Ace Bakery Bread", "unit": "g", "cal100": 237.2, "prot100": 7.7, "carbs100": 48.7}, {"name": "Aioli", "unit": "g", "cal100": 822.0, "prot100": 3.0, "carbs100": 0.0}, {"name": "Almonds", "unit": "g", "cal100": 621.2, "prot100": 21.2, "carbs100": 21.6}, {"name": "Avocado", "unit": "g", "cal100": 181.0, "prot100": 2.0, "carbs100": 8.6}, {"name": "Bacon (slice)", "unit": "each", "cal_u": 100.0, "prot_u": 7.0, "carbs_u": 0.0}, {"name": "Baguette (g)", "unit": "g", "cal100": 96.7, "prot100": 3.2, "carbs100": 19.0}, {"name": "Balsamic Vinegar", "unit": "g", "cal100": 102.4, "prot100": 0.6, "carbs100": 25.0}, {"name": "Beef Liver Pate", "unit": "g", "cal100": 235.4, "prot100": 13.3, "carbs100": 2.7}, {"name": "Beef Patty (one)", "unit": "each", "cal_u": 366.0, "prot_u": 23.6, "carbs_u": 33.4}, {"name": "Beef Stew", "unit": "g", "cal100": 281.7, "prot100": 25.9, "carbs100": 21.6}, {"name": "Beef, Extra Lean (Raw)", "unit": "g", "cal100": 154.0, "prot100": 25.0, "carbs100": 0.0}, {"name": "Beef, GF (Raw)", "unit": "g", "cal100": 136.0, "prot100": 25.0, "carbs100": 0.0}, {"name": "Beef, Lean (Raw)", "unit": "g", "cal100": 175.0, "prot100": 19.0, "carbs100": 0.0}, {"name": "Beef, Stewing", "unit": "g", "cal100": 154.0, "prot100": 25.0, "carbs100": 0.0}, {"name": "BioItalia Pasta (uncooked)", "unit": "g", "cal100": 359.2, "prot100": 10.6, "carbs100": 76.5}, {"name": "Bolo (g)", "unit": "g", "cal100": 135.5, "prot100": 19.6, "carbs100": 6.3}, {"name": "Brandade", "unit": "g", "cal100": 158.7, "prot100": 8.6, "carbs100": 7.5}, {"name": "Bread - Homemade (g)", "unit": "g", "cal100": 436.4, "prot100": 13.6, "carbs100": 13.6}, {"name": "Bread - Silver Springs (slice)", "unit": "each", "cal_u": 95.5, "prot_u": 5.0, "carbs_u": 15.5}, {"name": "Breakfast Smoothie", "unit": "g", "cal100": 98.5, "prot100": 6.3, "carbs100": 7.4}, {"name": "Brown Sugar", "unit": "g", "cal100": 392.0, "prot100": 0.0, "carbs100": 98.0}, {"name": "Brownies", "unit": "g", "cal100": 471.6, "prot100": 3.6, "carbs100": 57.6}, {"name": "Bun, Bao (one)", "unit": "each", "cal_u": 108.0, "prot_u": 3.3, "carbs_u": 17.6}, {"name": "Bun, Dempsters (one)", "unit": "each", "cal_u": 130.0, "prot_u": 4.0, "carbs_u": 24.0}, {"name": "Bun, Fred’s Brioche (one)", "unit": "each", "cal_u": 177.0, "prot_u": 4.0, "carbs_u": 20.0}, {"name": "Bun, Homemade  (one)", "unit": "each", "cal_u": 194.8, "prot_u": 5.9, "carbs_u": 35.1}, {"name": "Bun, Italiano (one)", "unit": "each", "cal_u": 186.0, "prot_u": 7.0, "carbs_u": 35.0}, {"name": "Butter", "unit": "g", "cal100": 720.0, "prot100": 0.0, "carbs100": 0.0}, {"name": "Butter Tart (one)", "unit": "each", "cal_u": 484.6, "prot_u": 5.0, "carbs_u": 67.1}, {"name": "Buttermilk Powder", "unit": "g", "cal100": 381.5, "prot100": 34.0, "carbs100": 49.0}, {"name": "Cake, Lemon White Chocolate (per slice)", "unit": "each", "cal_u": 325.3, "prot_u": 7.0, "carbs_u": 32.8}, {"name": "Camino 88%", "unit": "g", "cal100": 655.0, "prot100": 10.0, "carbs100": 30.0}, {"name": "Carrot", "unit": "g", "cal100": 30.8, "prot100": 0.0, "carbs100": 7.7}, {"name": "Carrot Salad (100g)", "unit": "g", "cal100": 95.6, "prot100": 0.0, "carbs100": 10.0}, {"name": "Chaffle (per heart)", "unit": "each", "cal_u": 71.3, "prot_u": 3.5, "carbs_u": 3.3}, {"name": "CHEESE", "unit": "g", "cal100": 349.0, "prot100": 22.0, "carbs100": 0.0}, {"name": "Cheese - Bete a Seguin", "unit": "g", "cal100": 324.0, "prot100": 20.0, "carbs100": 1.0}, {"name": "Cheese - Black Lemon Gouda", "unit": "g", "cal100": 316.7, "prot100": 23.3, "carbs100": 3.3}, {"name": "Cheese - Bleu d’Auvergne", "unit": "g", "cal100": 340.0, "prot100": 19.7, "carbs100": 1.4}, {"name": "Cheese - Brebirousse", "unit": "g", "cal100": 310.3, "prot100": 18.0, "carbs100": 3.3}, {"name": "Cheese - Cheddar", "unit": "g", "cal100": 366.0, "prot100": 21.0, "carbs100": 3.0}, {"name": "Cheese - Goat Feta", "unit": "g", "cal100": 274.0, "prot100": 16.0, "carbs100": 0.0}, {"name": "Cheese - Mozzarella", "unit": "g", "cal100": 346.5, "prot100": 23.3, "carbs100": 3.3}, {"name": "Cheese Cheval Noir de l’Isle", "unit": "g", "cal100": 362.0, "prot100": 20.0, "carbs100": 3.0}, {"name": "Cheese Grey Owl", "unit": "g", "cal100": 303.3, "prot100": 20.0, "carbs100": 3.3}, {"name": "Cheese Prima Donna", "unit": "g", "cal100": 376.7, "prot100": 26.7, "carbs100": 0.0}, {"name": "Chick Peas, Dry", "unit": "g", "cal100": 383.3, "prot100": 20.0, "carbs100": 63.0}, {"name": "Chicken Breast (cooked)", "unit": "g", "cal100": 156.4, "prot100": 31.0, "carbs100": 0.0}, {"name": "Chicken Leg (cooked)", "unit": "g", "cal100": 175.7, "prot100": 23.0, "carbs100": 0.0}, {"name": "Chicken Thigh (cooked)", "unit": "g", "cal100": 168.8, "prot100": 23.3, "carbs100": 0.0}, {"name": "Chips, Neal Brothers", "unit": "g", "cal100": 494.0, "prot100": 8.0, "carbs100": 66.0}, {"name": "Chocolate (BB Almond Bark)", "unit": "g", "cal100": 577.5, "prot100": 10.0, "carbs100": 50.0}, {"name": "Chocolate 74%", "unit": "g", "cal100": 580.0, "prot100": 10.0, "carbs100": 45.0}, {"name": "Chocolate Cake (Swedish - slice)", "unit": "each", "cal_u": 280.2, "prot_u": 3.1, "carbs_u": 32.4}, {"name": "Chocolate Cake, stovetop (slice)", "unit": "each", "cal_u": 279.3, "prot_u": 5.6, "carbs_u": 38.9}, {"name": "Chocolate Curls", "unit": "g", "cal100": 508.4, "prot100": 5.6, "carbs100": 54.0}, {"name": "Chocolate Ice Cream", "unit": "g", "cal100": 158.5, "prot100": 3.2, "carbs100": 14.9}, {"name": "Chocolate Milk", "unit": "g", "cal100": 76.2, "prot100": 3.7, "carbs100": 12.9}, {"name": "Chocolate, Chocosol, Cherry", "unit": "g", "cal100": 518.4, "prot100": 5.3, "carbs100": 47.4}, {"name": "Chocolate, Tony Chocolonely", "unit": "g", "cal100": 519.4, "prot100": 5.6, "carbs100": 55.6}, {"name": "Chocolate, White", "unit": "g", "cal100": 550.0, "prot100": 5.0, "carbs100": 65.0}, {"name": "Cocoa Powder", "unit": "g", "cal100": 421.3, "prot100": 27.5, "carbs100": 52.5}, {"name": "Coconut Flakes", "unit": "g", "cal100": 702.9, "prot100": 6.9, "carbs100": 23.7}, {"name": "Cod", "unit": "g", "cal100": 85.0, "prot100": 19.0, "carbs100": 0.0}, {"name": "Collagen", "unit": "g", "cal100": 360.0, "prot100": 90.0, "carbs100": 0.0}, {"name": "Cookie, Chocolate Chip (one)", "unit": "each", "cal_u": 200.6, "prot_u": 2.4, "carbs_u": 27.6}, {"name": "Cookie, Ginger Molasses (one)", "unit": "each", "cal_u": 108.4, "prot_u": 1.4, "carbs_u": 13.2}, {"name": "Cookie, Momint (one)", "unit": "each", "cal_u": 101.0, "prot_u": 1.0, "carbs_u": 13.0}, {"name": "Corn", "unit": "g", "cal100": 76.5, "prot100": 2.0, "carbs100": 16.0}, {"name": "Corn Syrup", "unit": "g", "cal100": 400.0, "prot100": 0.0, "carbs100": 100.0}, {"name": "Corn Tortilla", "unit": "each", "cal_u": 62.8, "prot_u": 1.5, "carbs_u": 12.5}, {"name": "Cottage Cheese", "unit": "g", "cal100": 63.2, "prot100": 12.3, "carbs100": 3.5}, {"name": "Covered Bridge Chips", "unit": "g", "cal100": 488.0, "prot100": 8.0, "carbs100": 60.0}, {"name": "Crackers, Black Sesame (per cracker)", "unit": "g", "cal100": 815.6, "prot100": 18.8, "carbs100": 150.0}, {"name": "Crackers, Seaweed (g)", "unit": "g", "cal100": 341.3, "prot100": 2.0, "carbs100": 83.3}, {"name": "Crackers, Water (1)", "unit": "g", "cal100": 360.0, "prot100": 10.0, "carbs100": 53.0}, {"name": "Cream", "unit": "g", "cal100": 308.0, "prot100": 2.0, "carbs100": 0.0}, {"name": "Cream, skimmed", "unit": "g", "cal100": 186.0, "prot100": 3.5, "carbs100": 2.5}, {"name": "Croissant", "unit": "each", "cal_u": 469.9, "prot_u": 5.2, "carbs_u": 49.5}, {"name": "Croissant, Almond (1)", "unit": "each", "cal_u": 602.0, "prot_u": 6.0, "carbs_u": 77.0}, {"name": "Dahl", "unit": "g", "cal100": 119.6, "prot100": 9.0, "carbs100": 20.0}, {"name": "Dates (per)", "unit": "each", "cal_u": 48.0, "prot_u": 1.0, "carbs_u": 11.0}, {"name": "Dried Cranberries", "unit": "g", "cal100": 342.7, "prot100": 0.2, "carbs100": 83.0}, {"name": "Dried Mango (BB)", "unit": "g", "cal100": 248.0, "prot100": 0.0, "carbs100": 62.0}, {"name": "Egg White", "unit": "g", "cal100": 16.0, "prot100": 4.0, "carbs100": 0.0}, {"name": "Egg Yolk", "unit": "each", "cal_u": 54.2, "prot_u": 2.3, "carbs_u": 0.0}, {"name": "Eggs (each)", "unit": "each", "cal_u": 73.0, "prot_u": 7.0, "carbs_u": 0.0}, {"name": "Fiore di Latte", "unit": "g", "cal100": 263.3, "prot100": 10.0, "carbs100": 3.3}, {"name": "Flour, All Purpose", "unit": "g", "cal100": 373.0, "prot100": 12.5, "carbs100": 73.3}, {"name": "Flour, Almond", "unit": "g", "cal100": 640.0, "prot100": 20.0, "carbs100": 20.0}, {"name": "Flour, Bread", "unit": "g", "cal100": 352.1, "prot100": 12.8, "carbs100": 71.3}, {"name": "Focaccia", "unit": "g", "cal100": 285.0, "prot100": 10.0, "carbs100": 50.0}, {"name": "Fred's Potato Bread", "unit": "g", "cal100": 211.0, "prot100": 6.0, "carbs100": 40.0}, {"name": "Frugal", "unit": "g", "cal100": 177.0, "prot100": 33.0, "carbs100": 0.0}, {"name": "Fruit", "unit": "g", "cal100": 60.0, "prot100": 0.0, "carbs100": 15.0}, {"name": "Fruit - Banana", "unit": "g", "cal100": 98.3, "prot100": 1.1, "carbs100": 22.8}, {"name": "Fruit - Blueberries", "unit": "g", "cal100": 50.0, "prot100": 0.0, "carbs100": 12.5}, {"name": "Fruit - Mango", "unit": "g", "cal100": 65.7, "prot100": 0.0, "carbs100": 16.4}, {"name": "Fruit - Pineapple", "unit": "g", "cal100": 52.4, "prot100": 0.0, "carbs100": 13.1}, {"name": "Fruit - Strawberries", "unit": "g", "cal100": 37.1, "prot100": 0.0, "carbs100": 9.3}, {"name": "Gelatin", "unit": "g", "cal100": 371.4, "prot100": 92.9, "carbs100": 0.0}, {"name": "Gnocchi", "unit": "g", "cal100": 148.0, "prot100": 4.0, "carbs100": 33.0}, {"name": "Goat Cheese", "unit": "g", "cal100": 260.0, "prot100": 16.7, "carbs100": 3.3}, {"name": "Grana Padano", "unit": "g", "cal100": 403.2, "prot100": 33.3, "carbs100": 0.0}, {"name": "Granola", "unit": "g", "cal100": 478.9, "prot100": 13.0, "carbs100": 40.4}, {"name": "Gummies (one)", "unit": "each", "cal_u": 59.3, "prot_u": 1.0, "carbs_u": 13.9}, {"name": "Gummy Bears", "unit": "g", "cal100": 350.0, "prot100": 7.5, "carbs100": 80.0}, {"name": "Haagen Dazs Vanilla", "unit": "g", "cal100": 191.5, "prot100": 3.2, "carbs100": 16.0}, {"name": "Happy Planet OJ", "unit": "g", "cal100": 44.8, "prot100": 0.0, "carbs100": 11.2}, {"name": "Hazelnuts", "unit": "g", "cal100": 677.0, "prot100": 15.0, "carbs100": 17.0}, {"name": "Herring Fillets (pieces)", "unit": "each", "cal_u": 22.0, "prot_u": 1.0, "carbs_u": 1.8}, {"name": "Honey", "unit": "g", "cal100": 329.6, "prot100": 0.0, "carbs100": 82.4}, {"name": "Hot Dog (Tredish)", "unit": "each", "cal_u": 262.0, "prot_u": 14.0, "carbs_u": 2.0}, {"name": "Hummus", "unit": "g", "cal100": 158.3, "prot100": 4.0, "carbs100": 9.9}, {"name": "Ice Cream, MCC (Homemade)", "unit": "g", "cal100": 258.0, "prot100": 3.8, "carbs100": 20.5}, {"name": "Ice Cream, Vanilla (Homemade)", "unit": "g", "cal100": 328.2, "prot100": 7.8, "carbs100": 25.3}, {"name": "Ikea cake", "unit": "each", "cal_u": 218.1, "prot_u": 4.4, "carbs_u": 20.6}, {"name": "Jam", "unit": "g", "cal100": 320.0, "prot100": 0.0, "carbs100": 80.0}, {"name": "Jamon", "unit": "g", "cal100": 310.0, "prot100": 28.0, "carbs100": 0.0}, {"name": "Juice", "unit": "g", "cal100": 48.0, "prot100": 0.0, "carbs100": 12.0}, {"name": "Juice, Beet (g)", "unit": "g", "cal100": 44.0, "prot100": 0.0, "carbs100": 11.0}, {"name": "Kalamata Olives (per)", "unit": "g", "cal100": 543.0, "prot100": 3.0, "carbs100": 27.0}, {"name": "Kefir", "unit": "g", "cal100": 60.7, "prot100": 3.3, "carbs100": 4.0}, {"name": "Ketchup", "unit": "g", "cal100": 96.0, "prot100": 0.0, "carbs100": 24.0}, {"name": "Kippers", "unit": "g", "cal100": 120.4, "prot100": 22.0, "carbs100": 0.0}, {"name": "Lakrids (one)", "unit": "each", "cal_u": 27.6, "prot_u": 0.3, "carbs_u": 3.7}, {"name": "Lentils, Green, cooked", "unit": "g", "cal100": 136.7, "prot100": 9.6, "carbs100": 23.6}, {"name": "Lindt 90%", "unit": "g", "cal100": 653.3, "prot100": 13.3, "carbs100": 30.0}, {"name": "Liver Crisps", "unit": "g", "cal100": 390.0, "prot100": 75.0, "carbs100": 0.0}, {"name": "Liver, cooked", "unit": "g", "cal100": 186.7, "prot100": 33.8, "carbs100": 0.0}, {"name": "Liver, Raw", "unit": "g", "cal100": 120.6, "prot100": 20.4, "carbs100": 3.0}, {"name": "Mac&Cheese (100g)", "unit": "each", "cal_u": 44.2, "prot_u": 3.9, "carbs_u": 0.4}, {"name": "Maple Syrup", "unit": "g", "cal100": 268.0, "prot100": 0.0, "carbs100": 67.0}, {"name": "Marble Cheese", "unit": "g", "cal100": 393.3, "prot100": 23.3, "carbs100": 0.0}, {"name": "Marshmallows", "unit": "g", "cal100": 342.9, "prot100": 3.6, "carbs100": 82.1}, {"name": "Martin’s Bun", "unit": "each", "cal_u": 125.5, "prot_u": 6.0, "carbs_u": 22.0}, {"name": "Masa Harina", "unit": "g", "cal100": 363.0, "prot100": 6.0, "carbs100": 78.0}, {"name": "Mashed Potatoes (100g)", "unit": "g", "cal100": 98.0, "prot100": 4.0, "carbs100": 16.8}, {"name": "Meatballs", "unit": "g", "cal100": 217.8, "prot100": 18.6, "carbs100": 7.4}, {"name": "Meatballs (per)", "unit": "each", "cal_u": 37.0, "prot_u": 4.9, "carbs_u": 0.3}, {"name": "Meatballs-Japanese (per)", "unit": "each", "cal_u": 37.7, "prot_u": 3.7, "carbs_u": 0.0}, {"name": "Milk Powder (full)", "unit": "g", "cal100": 550.0, "prot100": 30.0, "carbs100": 40.0}, {"name": "Milk Powder (Skim )", "unit": "g", "cal100": 359.1, "prot100": 36.4, "carbs100": 51.8}, {"name": "Milk, 1%", "unit": "g", "cal100": 42.6, "prot100": 3.6, "carbs100": 4.8}, {"name": "Milk, 2%", "unit": "g", "cal100": 51.6, "prot100": 3.6, "carbs100": 4.8}, {"name": "Milk, Full", "unit": "g", "cal100": 66.7, "prot100": 4.0, "carbs100": 4.8}, {"name": "Molasses", "unit": "g", "cal100": 300.0, "prot100": 0.0, "carbs100": 75.0}, {"name": "Mozzarella", "unit": "g", "cal100": 286.7, "prot100": 26.7, "carbs100": 0.0}, {"name": "Muffin, Blueberry (1)", "unit": "each", "cal_u": 384.2, "prot_u": 5.5, "carbs_u": 56.5}, {"name": "Natto (package)", "unit": "each", "cal_u": 87.5, "prot_u": 7.0, "carbs_u": 7.0}, {"name": "Nut Butter, HazelChoco", "unit": "g", "cal100": 518.0, "prot100": 6.5, "carbs100": 51.0}, {"name": "Oats, Old Fashioned", "unit": "g", "cal100": 387.5, "prot100": 12.5, "carbs100": 67.5}, {"name": "Olive Oil", "unit": "g", "cal100": 840.0, "prot100": 0.0, "carbs100": 0.0}, {"name": "Orange Cheddar (slice)", "unit": "each", "cal_u": 87.0, "prot_u": 5.0, "carbs_u": 1.0}, {"name": "Parmigiano Reggiano", "unit": "g", "cal100": 396.9, "prot100": 32.4, "carbs100": 0.0}, {"name": "Pasta - Felicetti (uncooked)", "unit": "g", "cal100": 358.8, "prot100": 10.6, "carbs100": 76.5}, {"name": "Pasta Felicetti - GF uncooked (UNCOOKED/COOKED =  FUSILI: COOKED/2.2\nPENNE: COOKED/1.8", "unit": "g", "cal100": 354.1, "prot100": 7.1, "carbs100": 78.8}, {"name": "Pasta, Fresh", "unit": "g", "cal100": 284.0, "prot100": 10.0, "carbs100": 52.0}, {"name": "Pastel de Nata (one)", "unit": "each", "cal_u": 260.0, "prot_u": 4.0, "carbs_u": 34.0}, {"name": "Peanut Butter", "unit": "g", "cal100": 606.7, "prot100": 26.7, "carbs100": 20.0}, {"name": "Peanuts", "unit": "g", "cal100": 630.1, "prot100": 24.4, "carbs100": 21.3}, {"name": "Pho", "unit": "each", "cal_u": 745.0, "prot_u": 50.0, "carbs_u": 80.0}, {"name": "Pita, white (1)", "unit": "each", "cal_u": 277.0, "prot_u": 9.0, "carbs_u": 49.0}, {"name": "Pizza Portion (of 12)", "unit": "each", "cal_u": 83.4, "prot_u": 3.7, "carbs_u": 9.0}, {"name": "Pizza-Freebird-Cheese (g)", "unit": "g", "cal100": 272.0, "prot100": 11.0, "carbs100": 39.0}, {"name": "Pizza-Freebird-Pepp (g)", "unit": "g", "cal100": 308.0, "prot100": 15.0, "carbs100": 35.0}, {"name": "Popcorn (raw)", "unit": "g", "cal100": 531.2, "prot100": 7.0, "carbs100": 59.2}, {"name": "Popsicle (1)", "unit": "each", "cal_u": 60.0, "prot_u": 0.0, "carbs_u": 15.0}, {"name": "Popsicle - Melona (1)", "unit": "each", "cal_u": 116.5, "prot_u": 0.0, "carbs_u": 19.0}, {"name": "Pork, Ground", "unit": "g", "cal100": 193.0, "prot100": 19.0, "carbs100": 0.0}, {"name": "Potato Flakes", "unit": "g", "cal100": 360.0, "prot100": 10.0, "carbs100": 80.0}, {"name": "Potatoes, Cooked", "unit": "g", "cal100": 93.3, "prot100": 3.3, "carbs100": 20.0}, {"name": "Pretzels (g)", "unit": "g", "cal100": 380.5, "prot100": 9.5, "carbs100": 80.0}, {"name": "Pumpkin Seeds", "unit": "g", "cal100": 630.0, "prot100": 30.0, "carbs100": 15.0}, {"name": "Ragout", "unit": "g", "cal100": 213.6, "prot100": 14.8, "carbs100": 5.7}, {"name": "Rainbow Trout (cooked)", "unit": "g", "cal100": 136.0, "prot100": 25.0, "carbs100": 0.0}, {"name": "Raisins", "unit": "g", "cal100": 320.0, "prot100": 2.5, "carbs100": 77.5}, {"name": "Rice Cakes (1)", "unit": "each", "cal_u": 32.0, "prot_u": 0.0, "carbs_u": 8.0}, {"name": "Rice Crispies", "unit": "g", "cal100": 380.9, "prot100": 5.9, "carbs100": 79.4}, {"name": "Rice Krispie Squares (G)", "unit": "g", "cal100": 403.0, "prot100": 4.7, "carbs100": 83.2}, {"name": "Rice Noodles (nest)", "unit": "each", "cal_u": 232.5, "prot_u": 4.0, "carbs_u": 53.0}, {"name": "Rice Pudding", "unit": "g", "cal100": 120.7, "prot100": 3.4, "carbs100": 25.1}, {"name": "Rice Spaghetti, Cooked", "unit": "g", "cal100": 178.6, "prot100": 3.3, "carbs100": 40.1}, {"name": "Rice, Cooked", "unit": "g", "cal100": 115.0, "prot100": 2.0, "carbs100": 26.3}, {"name": "Ricotta Pancake (1)", "unit": "each", "cal_u": 168.0, "prot_u": 10.2, "carbs_u": 22.4}, {"name": "Ricotta, low fat", "unit": "g", "cal100": 129.1, "prot100": 12.7, "carbs100": 7.3}, {"name": "Ritter Sport 75%", "unit": "g", "cal100": 630.0, "prot100": 7.5, "carbs100": 37.5}, {"name": "Ritter Sport Hazelnut", "unit": "g", "cal100": 600.0, "prot100": 7.9, "carbs100": 47.4}, {"name": "Ritter Sport Hazelnut Milk (per piece)", "unit": "each", "cal_u": 37.2, "prot_u": 0.5, "carbs_u": 3.2}, {"name": "Rizopia Pasta", "unit": "g", "cal100": 360.7, "prot100": 7.2, "carbs100": 77.0}, {"name": "Rowe Hotdog (Each)", "unit": "each", "cal_u": 157.0, "prot_u": 8.0, "carbs_u": 2.0}, {"name": "Sardines (1 CAN)", "unit": "each", "cal_u": 131.0, "prot_u": 16.0, "carbs_u": 1.0}, {"name": "Sardines in sauce", "unit": "g", "cal100": 122.8, "prot100": 10.8, "carbs100": 3.6}, {"name": "Sausage Rowe Chicken (Each)", "unit": "each", "cal_u": 107.0, "prot_u": 19.0, "carbs_u": 1.0}, {"name": "Sausage Rowe French (% of package)", "unit": "each", "cal_u": 1179.0, "prot_u": 90.0, "carbs_u": 4.5}, {"name": "Sausage, Farm", "unit": "g", "cal100": 266.0, "prot100": 25.0, "carbs100": 1.0}, {"name": "Sausage, Garden Party (100g)", "unit": "g", "cal100": 161.0, "prot100": 19.0, "carbs100": 1.0}, {"name": "Sausage, La Bretagne (100g)", "unit": "g", "cal100": 274.0, "prot100": 18.0, "carbs100": 1.0}, {"name": "Sausage, Turkey (cooked, g)", "unit": "g", "cal100": 316.0, "prot100": 40.0, "carbs100": 0.0}, {"name": "Semisweet chocolate chips", "unit": "g", "cal100": 533.3, "prot100": 6.7, "carbs100": 66.7}, {"name": "Sesame Snaps (1 package)", "unit": "each", "cal_u": 183.0, "prot_u": 4.0, "carbs_u": 17.0}, {"name": "Shawarma (1, chicken, no sauce)", "unit": "g", "cal100": 455.0, "prot100": 59.0, "carbs100": 39.0}, {"name": "Shepherds Pie", "unit": "g", "cal100": 295.7, "prot100": 29.3, "carbs100": 29.4}, {"name": "Short Ribs", "unit": "g", "cal100": 239.0, "prot100": 26.0, "carbs100": 0.0}, {"name": "Shrimp 16/20 (per)", "unit": "each", "cal_u": 16.0, "prot_u": 4.0, "carbs_u": 0.0}, {"name": "Soppressata Salami", "unit": "g", "cal100": 351.0, "prot100": 24.0, "carbs100": 3.0}, {"name": "Sorbet", "unit": "g", "cal100": 100.0, "prot100": 0.0, "carbs100": 25.0}, {"name": "Sour Cream (full fat)", "unit": "g", "cal100": 160.1, "prot100": 3.3, "carbs100": 3.3}, {"name": "Stickini", "unit": "g", "cal100": 350.0, "prot100": 32.0, "carbs100": 6.0}, {"name": "Sunflower Seeds", "unit": "g", "cal100": 626.7, "prot100": 20.8, "carbs100": 20.0}, {"name": "Sweet Potato", "unit": "g", "cal100": 92.6, "prot100": 2.0, "carbs100": 20.7}, {"name": "Taco Meat (g)", "unit": "g", "cal100": 148.3, "prot100": 19.4, "carbs100": 10.5}, {"name": "Taco Shells (one)", "unit": "each", "cal_u": 55.2, "prot_u": 1.0, "carbs_u": 10.0}, {"name": "Tahini", "unit": "g", "cal100": 638.0, "prot100": 17.0, "carbs100": 21.0}, {"name": "Tom Kha Gai", "unit": "g", "cal100": 385.0, "prot100": 50.0, "carbs100": 8.0}, {"name": "Tomato Beef", "unit": "g", "cal100": 151.1, "prot100": 15.0, "carbs100": 0.8}, {"name": "Tomato, Canned", "unit": "g", "cal100": 37.9, "prot100": 0.8, "carbs100": 8.0}, {"name": "Tortilla Chips (que pasa red)", "unit": "g", "cal100": 512.0, "prot100": 8.0, "carbs100": 66.0}, {"name": "Tortilla, Lita’s (one)", "unit": "each", "cal_u": 104.0, "prot_u": 2.5, "carbs_u": 14.5}, {"name": "Tortilla, sprouted (one)", "unit": "each", "cal_u": 61.0, "prot_u": 1.5, "carbs_u": 11.5}, {"name": "Tuna", "unit": "g", "cal100": 109.4, "prot100": 26.0, "carbs100": 0.0}, {"name": "Turkey Breast (Deli)", "unit": "g", "cal100": 106.0, "prot100": 20.0, "carbs100": 2.0}, {"name": "Vanilla Cake (slice)", "unit": "each", "cal_u": 257.4, "prot_u": 10.7, "carbs_u": 16.9}, {"name": "Vanilla Sea Salt Chocosol", "unit": "g", "cal100": 557.3, "prot100": 8.0, "carbs100": 53.3}, {"name": "Vital Gluten", "unit": "g", "cal100": 388.3, "prot100": 76.6, "carbs100": 13.0}, {"name": "Waffles (1 PIECE)", "unit": "each", "cal_u": 50.7, "prot_u": 1.2, "carbs_u": 6.2}, {"name": "White Sugar", "unit": "g", "cal100": 400.0, "prot100": 0.0, "carbs100": 100.0}, {"name": "Yellow Corn Chips", "unit": "g", "cal100": 494.0, "prot100": 8.0, "carbs100": 66.0}, {"name": "Yogurt, 2%", "unit": "g", "cal100": 56.7, "prot100": 4.6, "carbs100": 5.1}, {"name": "Yogurt, 2% Greek", "unit": "g", "cal100": 68.1, "prot100": 9.1, "carbs100": 3.4}, {"name": "Yogurt, 2% Greek Homemade", "unit": "g", "cal100": 70.0, "prot100": 10.0, "carbs100": 3.0}, {"name": "Yogurt, 2% Greek Homemade - Creamy", "unit": "g", "cal100": 58.1, "prot100": 8.3, "carbs100": 2.5}, {"name": "Yogurt, 3.8%", "unit": "g", "cal100": 70.1, "prot100": 4.0, "carbs100": 4.6}, {"name": "Yogurt, Angelos 14%", "unit": "g", "cal100": 170.0, "prot100": 4.0, "carbs100": 7.0}, {"name": "Yogurt, Goat", "unit": "g", "cal100": 67.4, "prot100": 5.1, "carbs100": 4.0}, {"name": "Yogurt, Greek", "unit": "g", "cal100": 85.5, "prot100": 10.3, "carbs100": 3.4}, {"name": "Yogurt, Homemade", "unit": "g", "cal100": 167.7, "prot100": 11.7, "carbs100": 4.0}, {"name": "Yogurt, Zero", "unit": "g", "cal100": 64.0, "prot100": 12.0, "carbs100": 4.0}];
+const DEFAULT_TARGETS = {hard:{cal:2800,protein:190,carbs:300},easy:{cal:2200,protein:185,carbs:200},rest:{cal:1900,protein:180,carbs:150}};
+
+// ── Utils ──────────────────────────────────────────────
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function dateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function rnd(n,d=0){return Math.round(n*(10**d))/(10**d);}
+function pct(v,m){return Math.min(100,m>0?Math.round(v/m*100):0);}
+function ls_get(k,def){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):def;}catch(e){return def;}}
+function ls_set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function uk(k){return activeUser+'_'+k;}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+// ── State ──────────────────────────────────────────────
+let activeUser = ls_get('active_user','rob');
+let dayType, targets, favs, log, customs, FOOD_DB, filtered;
+let activeFood = null, editFoodOrig = null, editUnit = 'g';
+let savedTimer = null;
+
+function loadUser(){
+  dayType  = ls_get(uk('daytype'),'hard');
+  targets  = ls_get(uk('targets'),DEFAULT_TARGETS);
+  ['hard','easy','rest'].forEach(t=>{if(!targets[t])targets[t]={...DEFAULT_TARGETS[t]};});
+  favs     = ls_get(uk('favs'),[]);
+  log      = ls_get(uk('log_'+todayKey()),[]);
+  customs  = ls_get(uk('customs'),[]);
+  FOOD_DB  = buildDB();
+  filtered = [...FOOD_DB];
+  ls_set(uk('daytype_'+todayKey()), dayType);
+}
+
+function buildDB(){
+  const base = FOOD_DB_DEFAULT.map(f=>({...f,custom:false}));
+  const overrides={};
+  customs.filter(f=>!f._deleted&&!f._new).forEach(f=>{overrides[f._origName||f.name]=f;});
+  const newFoods = customs.filter(f=>f._new&&!f._deleted);
+  const deleted  = new Set(customs.filter(f=>f._deleted).map(f=>f.name));
+  const result=[];
+  base.forEach(f=>{
+    if(deleted.has(f.name))return;
+    result.push(overrides[f.name]?{...overrides[f.name],custom:true}:f);
+  });
+  newFoods.forEach(f=>result.push({...f,custom:true}));
+  result.sort((a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+  return result;
+}
+
+function calcMacros(food,qty){
+  if(food.unit==='each')return{cal:rnd(food.cal_u*qty,1),protein:rnd(food.prot_u*qty,1),carbs:rnd(food.carbs_u*qty,1)};
+  return{cal:rnd(food.cal100*qty/100,1),protein:rnd(food.prot100*qty/100,1),carbs:rnd(food.carbs100*qty/100,1)};
+}
+function portionLabel(food,qty){return food.unit==='each'?qty+(qty===1?' item':' items'):qty+'g';}
+
+function showSaved(){
+  const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('saved-lbl').textContent='\u2713 SAVED '+t;
+  if(savedTimer)clearTimeout(savedTimer);
+  savedTimer=setTimeout(()=>document.getElementById('saved-lbl').textContent='',4000);
+}
+
+// ── Tabs ───────────────────────────────────────────────
+let currentTab = 'log';
+function setTab(t){
+  currentTab=t;
+  ['log','foods','favs','history'].forEach(x=>{
+    document.getElementById('view-'+x).classList.toggle('hidden',x!==t);
+    document.getElementById('tab-'+x).classList.toggle('active',x===t);
+  });
+  if(t==='foods')setTimeout(()=>document.getElementById('food-search').focus(),150);
+  if(t==='history')renderHistory();
+}
+
+// ── User ───────────────────────────────────────────────
+function setUser(u){
+  activeUser=u; ls_set('active_user',u);
+  loadUser(); renderAll(); setTab('log');
+}
+
+// ── Day type ───────────────────────────────────────────
+function setDayType(t){
+  dayType=t; ls_set(uk('daytype'),t); ls_set(uk('daytype_'+todayKey()),t); renderAll();
+}
+
+// ── Render all ─────────────────────────────────────────
+function renderAll(){
+  // User buttons
+  document.getElementById('btn-rob').className='user-btn'+(activeUser==='rob'?' rob':'');
+  document.getElementById('btn-hanna').className='user-btn'+(activeUser==='hanna'?' hanna':'');
+  // Day buttons
+  ['hard','easy','rest'].forEach(t=>{document.getElementById('btn-'+t).className='toggle-btn'+(dayType===t?' a'+t[0]:'');});
+
+  const tgt=targets[dayType];
+  const totCal=log.reduce((a,e)=>a+e.cal,0);
+  const totProt=log.reduce((a,e)=>a+e.protein,0);
+  const totCarb=log.reduce((a,e)=>a+(e.carbs||0),0);
+
+  // Macro cards
+  setMacro('cal',totCal,tgt.cal,'','bcal');
+  setMacro('prot',totProt,tgt.protein,'g','bprot');
+  setMacro('carb',totCarb,tgt.carbs||300,'g','bcarb');
+
+  // Log
+  document.getElementById('log-count').textContent=log.length+(log.length===1?' entry':' entries');
+  document.getElementById('clear-btn').style.display=log.length?'block':'none';
+  const ls=document.getElementById('log-scroll');
+  ls.innerHTML=log.length?[...log].reverse().map(e=>`
+    <div class="log-entry">
+      <div><div class="log-name">${e.name}</div><div class="log-detail">${e.portion} &middot; ${e.time}</div></div>
+      <div class="log-right">
+        <span class="lm c">${rnd(e.cal)}</span>
+        <span class="lm p">${rnd(e.protein)}g</span>
+        <span class="lm cb">${rnd(e.carbs||0)}g</span>
+        <button class="log-del-btn" onclick="removeLog('${e.id}')">&times;</button>
+      </div>
+    </div>`).join(''):'<div class="log-empty">Nothing logged yet &mdash; tap Foods to add</div>';
+
+  // Favs
+  const fg=document.getElementById('favs-grid');
+  fg.innerHTML=favs.length?favs.map(f=>`
+    <div class="fav-card" onclick="logFav('${f.id}')">
+      <button class="fav-del" onclick="event.stopPropagation();removeFav('${f.id}')">&times;</button>
+      <div class="fav-name">${f.name}</div>
+      <div class="fav-portion">${f.portion}</div>
+      <div class="fav-macros">
+        <span class="fm c">${rnd(f.cal)} kcal</span>
+        <span class="fm p">${rnd(f.protein)}g</span>
+        <span class="fm cb">${rnd(f.carbs||0)}g</span>
+      </div>
+    </div>`).join(''):'<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:30px 0;font-style:italic">No favourites yet.<br>Find a food, set quantity, tap &#9734; Fav.</div>';
+
+  renderFoodList();
+}
+
+function setMacro(id,val,tgtVal,unit,barCls){
+  const num=document.getElementById('m-'+id);
+  num.innerHTML=rnd(val)+(unit?'<span class="macro-unit">'+unit+'</span>':'');
+  const rem=tgtVal-val;
+  const remEl=document.getElementById('m-'+id+'-rem');
+  if(id==='prot'&&rem<=0){remEl.innerHTML='<span class="hit">\u2713 hit</span>';}
+  else if(rem<0){remEl.innerHTML='<span class="ov">'+rnd(-rem)+unit+' over</span>';}
+  else{remEl.innerHTML='<span class="rv">'+rnd(rem)+'</span>'+unit+' left';}
+  const bar=document.getElementById('bar-'+id);
+  const p=pct(val,tgtVal);
+  bar.style.width=p+'%';
+  bar.className='bar-fill '+(p>=100?'bover':barCls);
+}
+
+// ── Food list ──────────────────────────────────────────
+function renderFoodList(){
+  document.getElementById('food-count').textContent=filtered.length+' foods';
+  document.getElementById('food-list').innerHTML=filtered.length?filtered.map((f,i)=>{
+    const e=f.unit==='each';
+    return`<div class="food-item">
+      <span class="food-tap" onclick="openFoodSheet(${i})">${f.name}${e?'<span class="unit-badge">each</span>':''}${f.custom?'<span style="color:#444;font-size:10px"> &#9998;</span>':''}</span>
+      <span class="food-right">
+        <span class="fm c">${e?f.cal_u:f.cal100}</span>
+        <span class="fm p">${e?f.prot_u:f.prot100}g</span>
+        <span class="fm cb">${e?f.carbs_u:f.carbs100}g</span>
+        <span class="per-lbl">${e?'ea':'/100g'}</span>
+        <button class="edit-icon" onclick="openEditFood(${i})">&#9998;</button>
+      </span>
+    </div>`;
+  }).join(''):'<div class="food-empty">No foods found</div>';
+}
+
+function filterFoods(){
+  const q=document.getElementById('food-search').value.toLowerCase();
+  filtered=q?FOOD_DB.filter(f=>f.name.toLowerCase().includes(q)):[...FOOD_DB];
+  renderFoodList();
+  document.getElementById('search-clear').style.display=q?'block':'none';
+}
+
+function showClear(){if(document.getElementById('food-search').value)document.getElementById('search-clear').style.display='block';}
+function hideClear(){setTimeout(()=>document.getElementById('search-clear').style.display='none',150);}
+function clearSearch(e){
+  e.preventDefault();
+  const inp=document.getElementById('food-search');
+  inp.value=''; filterFoods(); inp.focus();
+  document.getElementById('search-clear').style.display='none';
+}
+
+// ── Food log sheet ─────────────────────────────────────
+function openFoodSheet(idx){
+  activeFood=filtered[idx];
+  const e=activeFood.unit==='each';
+  document.getElementById('fd-name').textContent=activeFood.name;
+  document.getElementById('fd-sub').textContent=e
+    ?`${activeFood.cal_u} kcal \u00b7 ${activeFood.prot_u}g protein \u00b7 ${activeFood.carbs_u}g carbs per item`
+    :`${activeFood.cal100} kcal \u00b7 ${activeFood.prot100}g protein \u00b7 ${activeFood.carbs100}g carbs per 100g`;
+  document.getElementById('fd-qty-lbl').textContent=e?'Quantity':'Amount (grams)';
+  const qi=document.getElementById('fd-qty');
+  qi.placeholder=e?'1':'100'; qi.value=e?1:100; qi.step=e?'1':'any';
+  updatePreview();
+  document.getElementById('sheet-food').classList.remove('hidden');
+  setTimeout(()=>qi.select(),150);
+}
+
+function updatePreview(){
+  if(!activeFood)return;
+  const qty=parseFloat(document.getElementById('fd-qty').value)||0;
+  if(!qty){['pv-cal','pv-prot','pv-carb'].forEach(id=>document.getElementById(id).textContent='\u2013');return;}
+  const m=calcMacros(activeFood,qty);
+  document.getElementById('pv-cal').textContent=rnd(m.cal);
+  document.getElementById('pv-prot').textContent=rnd(m.protein,1);
+  document.getElementById('pv-carb').textContent=rnd(m.carbs,1);
+}
+
+function doLog(){
+  if(!activeFood)return;
+  const qty=parseFloat(document.getElementById('fd-qty').value);
+  if(!qty||qty<=0)return;
+  const m=calcMacros(activeFood,qty);
+  log.push({id:Date.now()+'',name:activeFood.name,portion:portionLabel(activeFood,qty),cal:m.cal,protein:m.protein,carbs:m.carbs,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  ls_set(uk('log_'+todayKey()),log);
+  ls_set(uk('daytype_'+todayKey()),dayType);
+  showSaved();
+  closeSheet('sheet-food'); setTab('log'); renderAll();
+}
+
+function doFav(){
+  if(!activeFood)return;
+  const qty=parseFloat(document.getElementById('fd-qty').value);
+  if(!qty||qty<=0)return;
+  const m=calcMacros(activeFood,qty);
+  favs.push({id:Date.now()+'',name:activeFood.name,portion:portionLabel(activeFood,qty),cal:m.cal,protein:m.protein,carbs:m.carbs});
+  ls_set(uk('favs'),favs);
+  showSaved();
+  closeSheet('sheet-food'); setTab('favs'); renderAll();
+}
+
+function logFav(id){
+  const f=favs.find(x=>x.id===id);if(!f)return;
+  log.push({id:Date.now()+'',name:f.name,portion:f.portion,cal:f.cal,protein:f.protein,carbs:f.carbs||0,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  ls_set(uk('log_'+todayKey()),log);
+  ls_set(uk('daytype_'+todayKey()),dayType);
+  showSaved();
+  setTab('log'); renderAll();
+}
+
+function removeFav(id){favs=favs.filter(f=>f.id!==id);ls_set(uk('favs'),favs);renderAll();}
+function removeLog(id){log=log.filter(e=>e.id!==id);ls_set(uk('log_'+todayKey()),log);renderAll();}
+function clearLog(){if(!confirm("Clear today\'s log?"))return;log=[];ls_set(uk('log_'+todayKey()),log);renderAll();}
+
+// ── Add/edit food ──────────────────────────────────────
+function setEditUnit(u){
+  editUnit=u;
+  document.getElementById('ef-unit-g').className=u==='g'?'sel':'';
+  document.getElementById('ef-unit-each').className=u==='each'?'sel':'';
+  document.getElementById('ef-hint').textContent=u==='each'?'Enter macros per item / serving':'Enter macros per 100g';
+}
+
+function openAddFood(){
+  editFoodOrig=null; editUnit='g';
+  document.getElementById('ef-title').textContent='Add Food';
+  ['ef-name','ef-cal','ef-prot','ef-carb'].forEach(id=>document.getElementById(id).value='');
+  setEditUnit('g');
+  document.getElementById('ef-del').classList.add('hidden');
+  document.getElementById('sheet-edit').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('ef-name').focus(),150);
+}
+
+function openEditFood(idx){
+  const f=filtered[idx]; editFoodOrig=f; editUnit=f.unit||'g';
+  document.getElementById('ef-title').textContent='Edit Food';
+  document.getElementById('ef-name').value=f.name;
+  document.getElementById('ef-cal').value=f.unit==='each'?f.cal_u:f.cal100;
+  document.getElementById('ef-prot').value=f.unit==='each'?f.prot_u:f.prot100;
+  document.getElementById('ef-carb').value=f.unit==='each'?f.carbs_u:f.carbs100;
+  setEditUnit(editUnit);
+  document.getElementById('ef-del').classList.remove('hidden');
+  document.getElementById('sheet-edit').classList.remove('hidden');
+}
+
+function saveEditFood(){
+  const name=document.getElementById('ef-name').value.trim();
+  const cal=parseFloat(document.getElementById('ef-cal').value)||0;
+  const prot=parseFloat(document.getElementById('ef-prot').value)||0;
+  const carb=parseFloat(document.getElementById('ef-carb').value)||0;
+  if(!name||!cal)return;
+  const food=editUnit==='each'?{name,unit:'each',cal_u:cal,prot_u:prot,carbs_u:carb}:{name,unit:'g',cal100:cal,prot100:prot,carbs100:carb};
+  if(!editFoodOrig){food._new=true;customs.push(food);}
+  else{food._origName=editFoodOrig.name;customs=customs.filter(f=>(f._origName||f.name)!==editFoodOrig.name&&f.name!==editFoodOrig.name);customs.push(food);}
+  ls_set(uk('customs'),customs);
+  FOOD_DB=buildDB(); filtered=[...FOOD_DB];
+  const q=document.getElementById('food-search').value.toLowerCase();
+  if(q)filtered=FOOD_DB.filter(f=>f.name.toLowerCase().includes(q));
+  closeSheet('sheet-edit'); renderAll();
+}
+
+function deleteEditFood(){
+  if(!editFoodOrig||!confirm('Remove this food?'))return;
+  customs=customs.filter(f=>(f._origName||f.name)!==editFoodOrig.name&&f.name!==editFoodOrig.name);
+  if(!editFoodOrig._new)customs.push({name:editFoodOrig.name,_deleted:true});
+  ls_set(uk('customs'),customs);
+  FOOD_DB=buildDB(); filtered=[...FOOD_DB];
+  const q=document.getElementById('food-search').value.toLowerCase();
+  if(q)filtered=FOOD_DB.filter(f=>f.name.toLowerCase().includes(q));
+  closeSheet('sheet-edit'); renderAll();
+}
+
+// ── Settings ───────────────────────────────────────────
+function openSettings(){
+  document.getElementById('settings-user').textContent='\u2014 '+cap(activeUser);
+  const t=targets;
+  document.getElementById('s-hc').value=t.hard.cal;   document.getElementById('s-hp').value=t.hard.protein;  document.getElementById('s-hcb').value=t.hard.carbs||300;
+  document.getElementById('s-ec').value=t.easy.cal;   document.getElementById('s-ep').value=t.easy.protein;  document.getElementById('s-ecb').value=t.easy.carbs||200;
+  document.getElementById('s-rc').value=t.rest.cal;   document.getElementById('s-rp').value=t.rest.protein;  document.getElementById('s-rcb').value=t.rest.carbs||150;
+  document.getElementById('sheet-settings').classList.remove('hidden');
+}
+function saveSettings(){
+  const g=id=>parseFloat(document.getElementById(id).value);
+  targets={hard:{cal:g('s-hc')||targets.hard.cal,protein:g('s-hp')||targets.hard.protein,carbs:g('s-hcb')||300},easy:{cal:g('s-ec')||targets.easy.cal,protein:g('s-ep')||targets.easy.protein,carbs:g('s-ecb')||200},rest:{cal:g('s-rc')||targets.rest.cal,protein:g('s-rp')||targets.rest.protein,carbs:g('s-rcb')||150}};
+  ls_set(uk('targets'),targets);
+  closeSheet('sheet-settings'); renderAll();
+}
+
+// ── History ────────────────────────────────────────────
+function renderHistory(){
+  document.getElementById('hist-title').textContent=cap(activeUser)+'\u2019s last 7 days';
+  const today=new Date(), html=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    const key=dateKey(d), isToday=key===todayKey();
+    const dl=isToday?log:ls_get(uk('log_'+key),[]);
+    const dt=ls_get(uk('daytype_'+key),isToday?dayType:'hard');
+    const tgt=targets[dt]||DEFAULT_TARGETS[dt];
+    const dc=dl.reduce((a,e)=>a+e.cal,0), dp=dl.reduce((a,e)=>a+e.protein,0), dcb=dl.reduce((a,e)=>a+(e.carbs||0),0);
+    const label=isToday?'Today':d.toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'}).toUpperCase();
+    if(!dl.length&&!isToday){
+      html.push(`<div class="hist-day"><div class="hist-date"><span>${label}</span><span class="no-data">no data</span></div></div>`);
+      continue;
+    }
+    const bar=(val,tv,cls,bc,unit)=>{const p=pct(val,tv);return`<div class="hist-mac"><div class="hist-mac-top"><span class="hist-mac-label">${cls==='c'?'Cal':cls==='p'?'Prot':'Carbs'}</span><span class="hist-mac-val ${cls}">${rnd(val)}${unit}</span></div><div class="hist-mac-tgt">/ ${tv}${unit}</div><div class="hist-bar-track"><div class="hist-bar-fill ${p>=100?'bover':bc}" style="width:${p}%"></div></div></div>`;};
+    html.push(`<div class="hist-day${isToday?' today':''}">
+      <div class="hist-date"><span>${label}</span><span style="display:flex;gap:6px;align-items:center">${isToday?'<span class="today-lbl">TODAY</span>':''}<span class="dt-lbl">${dt.toUpperCase()}</span></span></div>
+      <div class="hist-macros">${bar(dc,tgt.cal,'c','bcal','')}${bar(dp,tgt.protein,'p','bprot','g')}${bar(dcb,tgt.carbs||300,'cb','bcarb','g')}</div>
+    </div>`);
+  }
+  document.getElementById('history-scroll').innerHTML=html.join('');
+}
+
+// ── Sheets ─────────────────────────────────────────────
+function closeSheet(id){document.getElementById(id).classList.add('hidden');}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    if(!document.getElementById('sheet-food').classList.contains('hidden'))doLog();
+    if(!document.getElementById('sheet-edit').classList.contains('hidden'))saveEditFood();
+    if(!document.getElementById('sheet-settings').classList.contains('hidden'))saveSettings();
+  }
+  if(e.key==='Escape'){['sheet-food','sheet-edit','sheet-settings'].forEach(closeSheet);}
+});
+
+// ── Init ───────────────────────────────────────────────
+loadUser();
+renderAll();
+</script>
+</body>
+</html>

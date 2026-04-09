@@ -288,10 +288,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;over
 <div class="overlay hidden" id="sheet-backup" onclick="closeSheet('sheet-backup')">
   <div class="sheet" onclick="event.stopPropagation()">
     <div class="sheet-title">Backup</div>
-    <div class="sheet-sub">Export your custom foods as text, or paste a previous backup to restore them.</div>
+    <div class="sheet-sub">Backs up everything — both users' logs, favourites, targets and custom foods for the last 14 days. Copy into Notes for safekeeping.</div>
     <div class="field">
-      <label id="backup-lbl">Your custom foods (copy this)</label>
-      <textarea id="backup-text" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--text);font-family:'Barlow',sans-serif;outline:none;height:140px;resize:none;line-height:1.4"></textarea>
+      <label id="backup-lbl">Full backup — copy all this text and save it somewhere safe</label>
+      <textarea id="backup-text" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:11px;color:var(--text);font-family:'Barlow',sans-serif;outline:none;height:160px;resize:none;line-height:1.4"></textarea>
     </div>
     <div id="backup-count" style="font-size:11px;color:var(--muted);margin-bottom:12px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase"></div>
     <div class="btn-row">
@@ -684,14 +684,40 @@ function renderHistory(){
 }
 
 // ── Backup / Restore ───────────────────────────────────
+function getAllData(){
+  const data = { version: 2, exported: new Date().toISOString(), users: {} };
+  ['rob','hanna'].forEach(u => {
+    const uData = { daytype: ls_get(u+'_daytype','hard'), targets: ls_get(u+'_targets', DEFAULT_TARGETS), favs: ls_get(u+'_favs',[]), customs: ls_get(u+'_customs',[]) };
+    // Grab up to 14 days of logs and daytypes
+    uData.logs = {};
+    uData.daytypes = {};
+    const today = new Date();
+    for(let i=0;i<14;i++){
+      const d = new Date(today); d.setDate(d.getDate()-i);
+      const k = dateKey(d);
+      const l = ls_get(u+'_log_'+k, null);
+      const dt = ls_get(u+'_daytype_'+k, null);
+      if(l && l.length) uData.logs[k] = l;
+      if(dt) uData.daytypes[k] = dt;
+    }
+    data.users[u] = uData;
+  });
+  return data;
+}
+
 function openBackup(){
-  const userCustoms = customs.filter(f=>!f._deleted);
-  const exportData = {user: activeUser, customs: userCustoms};
-  const txt = JSON.stringify(exportData, null, 2);
+  const data = getAllData();
+  const txt = JSON.stringify(data, null, 2);
+  const robCustoms = (data.users.rob.customs||[]).filter(f=>!f._deleted).length;
+  const hannaCustoms = (data.users.hanna.customs||[]).filter(f=>!f._deleted).length;
+  const robFavs = (data.users.rob.favs||[]).length;
+  const hannaFavs = (data.users.hanna.favs||[]).length;
+  const robLogs = Object.keys(data.users.rob.logs||{}).length;
+  const hannaLogs = Object.keys(data.users.hanna.logs||{}).length;
   document.getElementById('backup-text').value = txt;
   document.getElementById('backup-count').textContent =
-    userCustoms.length + ' custom food' + (userCustoms.length===1?'':'s') + ' for ' + cap(activeUser);
-  document.getElementById('backup-lbl').textContent = 'Your custom foods (copy this to save)';
+    'Rob: '+robFavs+' favs, '+robCustoms+' custom foods, '+robLogs+' days of logs  |  Hanna: '+hannaFavs+' favs, '+hannaCustoms+' custom foods, '+hannaLogs+' days of logs';
+  document.getElementById('backup-lbl').textContent = 'Full backup — copy all this text and save it somewhere safe';
   document.getElementById('sheet-backup').classList.remove('hidden');
 }
 
@@ -699,33 +725,58 @@ function copyBackup(){
   const ta = document.getElementById('backup-text');
   ta.select();
   try {
-    document.execCommand('copy');
-    document.getElementById('backup-lbl').textContent = '✓ Copied to clipboard!';
-    setTimeout(()=>document.getElementById('backup-lbl').textContent='Your custom foods (copy this to save)', 2500);
+    // Modern clipboard API
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value).then(()=>{
+        document.getElementById('backup-lbl').textContent = '✓ Copied to clipboard!';
+        setTimeout(()=>document.getElementById('backup-lbl').textContent='Full backup — copy all this text and save it somewhere safe', 2500);
+      });
+    } else {
+      document.execCommand('copy');
+      document.getElementById('backup-lbl').textContent = '✓ Copied to clipboard!';
+      setTimeout(()=>document.getElementById('backup-lbl').textContent='Full backup — copy all this text and save it somewhere safe', 2500);
+    }
   } catch(e) {
-    document.getElementById('backup-lbl').textContent = 'Select all text above and copy manually';
+    document.getElementById('backup-lbl').textContent = 'Tap the text above, select all, and copy manually';
   }
 }
 
 function importBackup(){
   const txt = document.getElementById('backup-text').value.trim();
-  if(!txt){ alert('Paste your backup text first.'); return; }
+  if(!txt){ alert('Paste your backup text first, then tap Import.'); return; }
   try {
     const data = JSON.parse(txt);
-    const imported = data.customs || data; // support both wrapped and raw array
-    if(!Array.isArray(imported)) throw new Error('Invalid format');
-    if(!confirm('This will merge ' + imported.length + ' food(s) into your current custom list. Existing entries with the same name will be replaced. Continue?')) return;
-    // Merge: imported foods override customs with same name
-    const names = new Set(imported.map(f=>f.name));
-    const merged = customs.filter(f=>!names.has(f.name)).concat(imported);
-    customs = merged;
-    ls_set(uk('customs'), customs);
-    FOOD_DB = buildDB(); filtered = [...FOOD_DB];
-    closeSheet('sheet-backup'); renderAll();
+    // Support old format (customs only) and new full format
+    if(data.version === 2 && data.users){
+      if(!confirm('This will restore all data for both Rob and Hanna from this backup. Current data will be overwritten. Continue?')) return;
+      ['rob','hanna'].forEach(u => {
+        const ud = data.users[u];
+        if(!ud) return;
+        if(ud.daytype)  ls_set(u+'_daytype', ud.daytype);
+        if(ud.targets)  ls_set(u+'_targets', ud.targets);
+        if(ud.favs)     ls_set(u+'_favs', ud.favs);
+        if(ud.customs)  ls_set(u+'_customs', ud.customs);
+        if(ud.logs)     Object.entries(ud.logs).forEach(([k,v])=>ls_set(u+'_log_'+k, v));
+        if(ud.daytypes) Object.entries(ud.daytypes).forEach(([k,v])=>ls_set(u+'_daytype_'+k, v));
+      });
+      loadUser(); renderAll();
+      closeSheet('sheet-backup');
+      alert('Restored successfully. All data for Rob and Hanna has been imported.');
+    } else {
+      // Legacy: customs-only backup
+      const imported = data.customs || data;
+      if(!Array.isArray(imported)) throw new Error('Invalid format');
+      if(!confirm('Import '+imported.length+' custom food(s) for '+cap(activeUser)+'?')) return;
+      const names = new Set(imported.map(f=>f.name));
+      customs = customs.filter(f=>!names.has(f.name)).concat(imported);
+      ls_set(uk('customs'), customs);
+      FOOD_DB = buildDB(); filtered = [...FOOD_DB];
+      closeSheet('sheet-backup'); renderAll();
+      alert('Imported '+imported.length+' food(s).');
+    }
     showSaved();
-    alert('Imported ' + imported.length + ' food(s) successfully.');
   } catch(e) {
-    alert('Could not read backup — make sure you pasted the full text including the { } brackets.');
+    alert('Could not read backup — make sure you pasted the complete text including the opening { and closing }.');
   }
 }
 

@@ -222,8 +222,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;over
     </div>
     <div class="btn-row">
       <button class="btn-s" onclick="closeSheet('sheet-food')">Cancel</button>
-      <button class="btn-o" onclick="doFav()">&#9734; Fav</button>
-      <button class="btn-p" onclick="doLog()">Log it</button>
+      <button class="btn-o" id="fd-fav-btn" onclick="doFav()">&#9734; Fav</button>
+      <button class="btn-p" id="fd-log-btn" onclick="doLog()">Log it</button>
     </div>
   </div>
 </div>
@@ -279,6 +279,26 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;over
       <button class="btn-s" onclick="closeSheet('sheet-settings')">Cancel</button>
       <button class="btn-p" onclick="saveSettings()">Save</button>
     </div>
+    <div class="divider"></div>
+    <button class="ghost-btn" style="width:100%;margin-top:2px" onclick="closeSheet('sheet-settings');openBackup()">&#128190; Backup custom foods&hellip;</button>
+  </div>
+</div>
+
+<!-- BACKUP SHEET -->
+<div class="overlay hidden" id="sheet-backup" onclick="closeSheet('sheet-backup')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-title">Backup</div>
+    <div class="sheet-sub">Export your custom foods as text, or paste a previous backup to restore them.</div>
+    <div class="field">
+      <label id="backup-lbl">Your custom foods (copy this)</label>
+      <textarea id="backup-text" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--text);font-family:'Barlow',sans-serif;outline:none;height:140px;resize:none;line-height:1.4"></textarea>
+    </div>
+    <div id="backup-count" style="font-size:11px;color:var(--muted);margin-bottom:12px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase"></div>
+    <div class="btn-row">
+      <button class="btn-s" onclick="closeSheet('sheet-backup')">Cancel</button>
+      <button class="btn-o" onclick="copyBackup()">Copy</button>
+      <button class="btn-p" onclick="importBackup()">Import</button>
+    </div>
   </div>
 </div>
 
@@ -300,7 +320,7 @@ function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 let activeUser = ls_get('active_user','rob');
 let dayType, targets, favs, log, customs, FOOD_DB, filtered;
 let activeFood = null, editFoodOrig = null, editUnit = 'g';
-let savedTimer = null;
+let savedTimer = null, editLogId = null;
 
 function loadUser(){
   dayType  = ls_get(uk('daytype'),'hard');
@@ -390,7 +410,10 @@ function renderAll(){
   const ls=document.getElementById('log-scroll');
   ls.innerHTML=log.length?[...log].reverse().map(e=>`
     <div class="log-entry">
-      <div><div class="log-name">${e.name}</div><div class="log-detail">${e.portion} &middot; ${e.time}</div></div>
+      <div style="cursor:pointer;flex:1;padding-right:8px" onclick="openLogEdit('${e.id}')">
+        <div class="log-name">${e.name}</div>
+        <div class="log-detail">${e.portion} &middot; ${e.time} &middot; <span style="color:#555">tap to edit</span></div>
+      </div>
       <div class="log-right">
         <span class="lm c">${rnd(e.cal)}</span>
         <span class="lm p">${rnd(e.protein)}g</span>
@@ -465,7 +488,32 @@ function clearSearch(e){
 }
 
 // ── Food log sheet ─────────────────────────────────────
+function openLogEdit(id){
+  const entry = log.find(e=>e.id===id); if(!entry) return;
+  // Find the food in the DB by name
+  const food = FOOD_DB.find(f=>f.name===entry.name);
+  if(!food){ alert('Food not found in database — it may have been deleted.'); return; }
+  editLogId = id;
+  activeFood = food;
+  const isEach = food.unit==='each';
+  // Parse qty back from portion string
+  const qty = isEach ? parseFloat(entry.portion) : parseFloat(entry.portion);
+  document.getElementById('fd-name').textContent=food.name;
+  document.getElementById('fd-sub').textContent=isEach
+    ?`${food.cal_u} kcal \u00b7 ${food.prot_u}g protein \u00b7 ${food.carbs_u}g carbs per item`
+    :`${food.cal100} kcal \u00b7 ${food.prot100}g protein \u00b7 ${food.carbs100}g carbs per 100g`;
+  document.getElementById('fd-qty-lbl').textContent=isEach?'Quantity':'Amount (grams)';
+  const qi=document.getElementById('fd-qty');
+  qi.placeholder=isEach?'1':'100'; qi.value=qty; qi.step=isEach?'1':'any';
+  updatePreview();
+  document.getElementById('fd-log-btn').textContent='Update';
+  document.getElementById('fd-fav-btn').style.display='none';
+  document.getElementById('sheet-food').classList.remove('hidden');
+  setTimeout(()=>qi.select(),150);
+}
+
 function openFoodSheet(idx){
+  editLogId = null;
   activeFood=filtered[idx];
   const e=activeFood.unit==='each';
   document.getElementById('fd-name').textContent=activeFood.name;
@@ -476,6 +524,8 @@ function openFoodSheet(idx){
   const qi=document.getElementById('fd-qty');
   qi.placeholder=e?'1':'100'; qi.value=e?1:100; qi.step=e?'1':'any';
   updatePreview();
+  document.getElementById('fd-log-btn').textContent='Log it';
+  document.getElementById('fd-fav-btn').style.display='';
   document.getElementById('sheet-food').classList.remove('hidden');
   setTimeout(()=>qi.select(),150);
 }
@@ -495,7 +545,16 @@ function doLog(){
   const qty=parseFloat(document.getElementById('fd-qty').value);
   if(!qty||qty<=0)return;
   const m=calcMacros(activeFood,qty);
-  log.push({id:Date.now()+'',name:activeFood.name,portion:portionLabel(activeFood,qty),cal:m.cal,protein:m.protein,carbs:m.carbs,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  const entry={id:editLogId||Date.now()+'',name:activeFood.name,portion:portionLabel(activeFood,qty),cal:m.cal,protein:m.protein,carbs:m.carbs,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+  if(editLogId){
+    // Replace existing entry, preserve original time
+    const orig=log.find(e=>e.id===editLogId);
+    if(orig)entry.time=orig.time;
+    log=log.map(e=>e.id===editLogId?entry:e);
+  } else {
+    log.push(entry);
+  }
+  editLogId=null;
   ls_set(uk('log_'+todayKey()),log);
   ls_set(uk('daytype_'+todayKey()),dayType);
   showSaved();
@@ -624,15 +683,61 @@ function renderHistory(){
   document.getElementById('history-scroll').innerHTML=html.join('');
 }
 
+// ── Backup / Restore ───────────────────────────────────
+function openBackup(){
+  const userCustoms = customs.filter(f=>!f._deleted);
+  const exportData = {user: activeUser, customs: userCustoms};
+  const txt = JSON.stringify(exportData, null, 2);
+  document.getElementById('backup-text').value = txt;
+  document.getElementById('backup-count').textContent =
+    userCustoms.length + ' custom food' + (userCustoms.length===1?'':'s') + ' for ' + cap(activeUser);
+  document.getElementById('backup-lbl').textContent = 'Your custom foods (copy this to save)';
+  document.getElementById('sheet-backup').classList.remove('hidden');
+}
+
+function copyBackup(){
+  const ta = document.getElementById('backup-text');
+  ta.select();
+  try {
+    document.execCommand('copy');
+    document.getElementById('backup-lbl').textContent = '✓ Copied to clipboard!';
+    setTimeout(()=>document.getElementById('backup-lbl').textContent='Your custom foods (copy this to save)', 2500);
+  } catch(e) {
+    document.getElementById('backup-lbl').textContent = 'Select all text above and copy manually';
+  }
+}
+
+function importBackup(){
+  const txt = document.getElementById('backup-text').value.trim();
+  if(!txt){ alert('Paste your backup text first.'); return; }
+  try {
+    const data = JSON.parse(txt);
+    const imported = data.customs || data; // support both wrapped and raw array
+    if(!Array.isArray(imported)) throw new Error('Invalid format');
+    if(!confirm('This will merge ' + imported.length + ' food(s) into your current custom list. Existing entries with the same name will be replaced. Continue?')) return;
+    // Merge: imported foods override customs with same name
+    const names = new Set(imported.map(f=>f.name));
+    const merged = customs.filter(f=>!names.has(f.name)).concat(imported);
+    customs = merged;
+    ls_set(uk('customs'), customs);
+    FOOD_DB = buildDB(); filtered = [...FOOD_DB];
+    closeSheet('sheet-backup'); renderAll();
+    showSaved();
+    alert('Imported ' + imported.length + ' food(s) successfully.');
+  } catch(e) {
+    alert('Could not read backup — make sure you pasted the full text including the { } brackets.');
+  }
+}
+
 // ── Sheets ─────────────────────────────────────────────
-function closeSheet(id){document.getElementById(id).classList.add('hidden');}
+function closeSheet(id){document.getElementById(id).classList.add('hidden');if(id==='sheet-food')editLogId=null;}
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'){
     if(!document.getElementById('sheet-food').classList.contains('hidden'))doLog();
     if(!document.getElementById('sheet-edit').classList.contains('hidden'))saveEditFood();
     if(!document.getElementById('sheet-settings').classList.contains('hidden'))saveSettings();
   }
-  if(e.key==='Escape'){['sheet-food','sheet-edit','sheet-settings'].forEach(closeSheet);}
+  if(e.key==='Escape'){['sheet-food','sheet-edit','sheet-settings','sheet-backup'].forEach(closeSheet);}
 });
 
 // ── Init ───────────────────────────────────────────────

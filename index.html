@@ -623,7 +623,7 @@ function saveEditFood(){
   if(!name||!cal)return;
   const food=editUnit==='each'?{name,unit:'each',cal_u:cal,prot_u:prot,carbs_u:carb}:{name,unit:'g',cal100:cal,prot100:prot,carbs100:carb};
   if(!editFoodOrig){food._new=true;customs.push(food);}
-  else{food._origName=editFoodOrig.name;customs=customs.filter(f=>(f._origName||f.name)!==editFoodOrig.name&&f.name!==editFoodOrig.name);customs.push(food);}
+  else{food._origName=editFoodOrig.name;if(editFoodOrig._new)food._new=true;customs=customs.filter(f=>(f._origName||f.name)!==editFoodOrig.name&&f.name!==editFoodOrig.name);customs.push(food);}
   ls_set(uk('customs'),customs);
   FOOD_DB=buildDB(); filtered=[...FOOD_DB];
   const q=document.getElementById('food-search').value.toLowerCase();

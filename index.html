@@ -334,8 +334,10 @@ function loadUser(){
   ls_set(uk('daytype_'+todayKey()), dayType);
 }
 
+let FOOD_DB_BASE = FOOD_DB_DEFAULT;
+
 function buildDB(){
-  const base = FOOD_DB_DEFAULT.map(f=>({...f,custom:false}));
+  const base = FOOD_DB_BASE.map(f=>({...f,custom:false}));
   const overrides={};
   customs.filter(f=>!f._deleted&&!f._new).forEach(f=>{overrides[f._origName||f.name]=f;});
   const newFoods = customs.filter(f=>f._new&&!f._deleted);
@@ -792,8 +794,11 @@ document.addEventListener('keydown',e=>{
 });
 
 // ── Init ───────────────────────────────────────────────
-loadUser();
-renderAll();
+(async function init(){
+  try{const r=await fetch('./foods.json');if(r.ok)FOOD_DB_BASE=await r.json();}catch(e){}
+  loadUser();
+  renderAll();
+})();
 </script>
 </body>
 </html>

@@ -32,7 +32,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;over
 .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
 .header-right-row{display:flex;gap:8px;align-items:center;}
 .settings-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px;line-height:1;}
-.reset-btn{background:none;border:1px solid #333;color:var(--muted);border-radius:6px;padding:4px 10px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
 .day-toggle{display:flex;background:var(--surface);border-radius:8px;padding:3px;gap:2px;}
 .toggle-btn{padding:5px 8px;border-radius:6px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:all .15s;background:transparent;color:var(--muted);}
 .toggle-btn.ah{background:var(--hard);color:#000;}.toggle-btn.ae{background:var(--easy);color:#000;}
@@ -201,7 +200,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;over
     <div class="header-right">
       <div class="header-right-row">
         <button class="settings-btn" onclick="openSettings()">&#9881;</button>
-        <button class="reset-btn hidden" id="reset-btn" onclick="confirmReset()">&#8635; New day</button>
       </div>
       <div class="day-toggle" id="day-toggle"></div>
     </div>
@@ -409,19 +407,19 @@ const FOOD_DB_DEFAULT=[{"name":"Ace Bakery Bread","unit":"g","cal100":237.2,"pro
 
 // ── Meal config (Rob) ──────────────────────────────────
 const MEALS=[
-  {id:'prev_dinner',        label:'Previous Dinner',      color:'#c084fc',carbTgt:200,protTgt:37},
-  {id:'pre_run',            label:'Pre-Run',              color:'#47c4ff',carbTgt:40, protTgt:null},
-  {id:'post_run_breakfast', label:'Post-Run / Breakfast', color:'#e8ff47',carbTgt:100,protTgt:40},
-  {id:'lunch',              label:'Lunch',                color:'#34d399',carbTgt:100,protTgt:40},
-  {id:'snack',              label:'Snack',                color:'#ff6b35',carbTgt:100,protTgt:35}
+  {id:'pre_run',   label:'Pre-Run',   color:'#47c4ff',carbTgt:40, protTgt:null},
+  {id:'breakfast', label:'Breakfast', color:'#e8ff47',carbTgt:100,protTgt:40},
+  {id:'lunch',     label:'Lunch',     color:'#34d399',carbTgt:100,protTgt:40},
+  {id:'snack',     label:'Snack',     color:'#ff6b35',carbTgt:100,protTgt:35},
+  {id:'dinner',    label:'Dinner',    color:'#f472b6',carbTgt:null,protTgt:null}
 ];
 const MEAL_IDS=MEALS.map(m=>m.id);
 
 // ── Defaults ───────────────────────────────────────────
 const DEFAULT_HANNA_TGTS={hard:{cal:2800,protein:190,carbs:300},easy:{cal:2200,protein:185,carbs:200},rest:{cal:1900,protein:180,carbs:150}};
 const DEFAULT_ROB_FLAT={rest:{cal:1900,protein:180,carbs:150}};
-const DEFAULT_MEAL_TGTS={prev_dinner:{carb:200,prot:37},pre_run:{carb:40,prot:null},post_run_breakfast:{carb:100,prot:40},lunch:{carb:100,prot:40},snack:{carb:100,prot:35}};
-const DEFAULT_EASY_MEAL_TGTS={prev_dinner:{carb:null,prot:null},pre_run:{carb:null,prot:null},post_run_breakfast:{carb:null,prot:null},lunch:{carb:null,prot:null},snack:{carb:null,prot:null}};
+const DEFAULT_MEAL_TGTS={pre_run:{carb:40,prot:null},breakfast:{carb:100,prot:40},lunch:{carb:100,prot:40},snack:{carb:100,prot:35},dinner:{carb:null,prot:null}};
+const DEFAULT_EASY_MEAL_TGTS={pre_run:{carb:null,prot:null},breakfast:{carb:null,prot:null},lunch:{carb:null,prot:null},snack:{carb:null,prot:null},dinner:{carb:null,prot:null}};
 
 // ── Utils ──────────────────────────────────────────────
 function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -448,7 +446,7 @@ function uk(k){
   // Rob uses tr_ prefix for training-specific keys
   const robKeyMap={
     daytype:'tr_daytype', favs:'tr_favs', customs:'tr_customs',
-    session:'tr_session'
+    session:'tr_session_'+todayKey()
   };
   if(robKeyMap[k]) return robKeyMap[k];
   if(k.startsWith('log_')) return 'tr_flat_'+k.slice(4);
@@ -461,7 +459,7 @@ function uk(k){
 let activeUser=lsg('active_user','hanna');
 let dayType,hannaTgts,robFlatTgts,mealTgts,easyMealTgts,favs,flatLog,sessionLog,customs;
 let FOOD_DB_BASE=FOOD_DB_DEFAULT,FOOD_DB,filtered;
-let activeFood=null,activeMeal='prev_dinner',activeFavMeal='prev_dinner';
+let activeFood=null,activeMeal='pre_run',activeFavMeal='pre_run';
 let editFoodOrig=null,editUnit='g',editLogId=null,editLogMeal=null;
 let savedTimer=null;
 
@@ -475,7 +473,7 @@ function loadState(){
     MEAL_IDS.forEach(id=>{if(!mealTgts[id])mealTgts[id]={...DEFAULT_MEAL_TGTS[id]};if(!easyMealTgts[id])easyMealTgts[id]={...DEFAULT_EASY_MEAL_TGTS[id]};});
     favs        = lsg('tr_favs',[]);
     flatLog     = lsg('tr_flat_'+todayKey(),[]);
-    sessionLog  = lsg('tr_session',{});
+    sessionLog  = lsg('tr_session_'+todayKey(),{});
     MEAL_IDS.forEach(id=>{if(!sessionLog[id])sessionLog[id]=[];});
     customs     = lsg('tr_customs',[]);
     lss('tr_daytype_'+todayKey(),dayType);
@@ -552,7 +550,6 @@ function renderAll(){
   ).join('');
 
   // Reset button (Rob meal days only)
-  document.getElementById('reset-btn').classList.toggle('hidden',!isMealDay());
 
   // Show/hide panels
   const showMeal=isMealDay();
@@ -662,7 +659,7 @@ function setMacro(id,val,tgt,unit,barCls){
 
 // ── Food sheet ─────────────────────────────────────────
 function openFoodForMeal(mealId){activeMeal=mealId;editLogId=null;editLogMeal=null;document.getElementById('fd-log-btn').textContent='Log it';document.getElementById('fd-fav-btn').style.display='';showFoodSheet();}
-function openFoodFromList(idx){activeFood=filtered[idx];editLogId=null;editLogMeal=null;activeMeal=isMealDay()?'prev_dinner':null;document.getElementById('fd-log-btn').textContent='Log it';document.getElementById('fd-fav-btn').style.display='';showFoodSheet();}
+function openFoodFromList(idx){activeFood=filtered[idx];editLogId=null;editLogMeal=null;activeMeal=isMealDay()?'pre_run':null;document.getElementById('fd-log-btn').textContent='Log it';document.getElementById('fd-fav-btn').style.display='';showFoodSheet();}
 function showFoodSheet(){
   if(!activeFood)return;
   const e=activeFood.unit==='each';
@@ -707,7 +704,7 @@ function doLog(){
   if(isMealDay()){
     if(editLogId&&editLogMeal){const orig=sessionLog[editLogMeal].find(e=>e.id===editLogId);if(orig)entry.time=orig.time;sessionLog[editLogMeal]=sessionLog[editLogMeal].map(e=>e.id===editLogId?entry:e);}
     else sessionLog[activeMeal].push(entry);
-    lss('tr_session',sessionLog);
+    lss('tr_session_'+todayKey(),sessionLog);
   } else {
     if(editLogId){const orig=flatLog.find(e=>e.id===editLogId);if(orig)entry.time=orig.time;flatLog=flatLog.map(e=>e.id===editLogId?entry:e);}
     else flatLog.push(entry);
@@ -746,7 +743,7 @@ function openFlatEdit(entryId){
   document.getElementById('fd-fav-btn').style.display='none';
   showFoodSheet();
 }
-function removeSessionEntry(mealId,entryId){sessionLog[mealId]=sessionLog[mealId].filter(e=>e.id!==entryId);lss('tr_session',sessionLog);renderAll();}
+function removeSessionEntry(mealId,entryId){sessionLog[mealId]=sessionLog[mealId].filter(e=>e.id!==entryId);lss('tr_session_'+todayKey(),sessionLog);renderAll();}
 function removeFlatEntry(id){
   flatLog=flatLog.filter(e=>e.id!==id);
   isRob()?lss('tr_flat_'+todayKey(),flatLog):lss('hanna_log_'+todayKey(),flatLog);renderAll();
@@ -783,7 +780,7 @@ function renderFavs(){
 function logFav(id){
   const f=favs.find(x=>x.id===id);if(!f)return;
   const entry={id:Date.now()+'',name:f.name,portion:f.portion,cal:f.cal,protein:f.protein,carbs:f.carbs||0,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
-  if(isMealDay()){sessionLog[activeFavMeal].push(entry);lss('tr_session',sessionLog);}
+  if(isMealDay()){sessionLog[activeFavMeal].push(entry);lss('tr_session_'+todayKey(),sessionLog);}
   else{flatLog.push(entry);isRob()?lss('tr_flat_'+todayKey(),flatLog):lss('hanna_log_'+todayKey(),flatLog);}
   showSaved();setTab('log');renderAll();
 }
@@ -815,14 +812,6 @@ function showClear(){if(document.getElementById('food-search').value)document.ge
 function hideClear(){setTimeout(()=>document.getElementById('search-clear').style.display='none',150);}
 function clearSearch(e){e.preventDefault();const inp=document.getElementById('food-search');inp.value='';filterFoods();inp.focus();document.getElementById('search-clear').style.display='none';}
 
-// ── Reset (Rob session) ────────────────────────────────
-function confirmReset(){
-  if(!confirm('Start a new dinner-to-dinner cycle? Meal logs will be saved to history and cleared.'))return;
-  lss('tr_session_hist_'+todayKey(),{...sessionLog,savedAt:new Date().toISOString()});
-  const empty={};MEAL_IDS.forEach(id=>empty[id]=[]);
-  sessionLog=empty;lss('tr_session',sessionLog);showSaved();renderAll();
-}
-
 // ── History ────────────────────────────────────────────
 function renderHistory(){
   document.getElementById('hist-title').textContent=(activeUser==='rob'?'Rob':'Hanna')+"\u2019s last 7 days";
@@ -832,7 +821,7 @@ function renderHistory(){
     const key=dateKey(d),isToday=key===todayKey();
     const label=isToday?'Today':d.toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'}).toUpperCase();
     if(isRob()){
-      const sessHist=lsg('tr_session_hist_'+key,null);
+      const sessHist=lsg('tr_session_'+key,null);
       const flatH=isToday&&!isMealDay()?flatLog:lsg('tr_flat_'+key,[]);
       const showCurrSess=isToday&&isMealDay()&&!sessHist;
       const dt=lsg('tr_daytype_'+key,isToday?dayType:'session');
@@ -947,13 +936,13 @@ function saveSettings(){
 function openBackup(){
   const today=new Date();
   const data={version:3,exported:new Date().toISOString(),
-    rob:{daytype:lsg('tr_daytype','session'),flatTgts:lsg('tr_flat_tgts',DEFAULT_ROB_FLAT),mealTgts:lsg('tr_meal_tgts',DEFAULT_MEAL_TGTS),easyMealTgts:lsg('tr_easy_meal_tgts',DEFAULT_EASY_MEAL_TGTS),favs:lsg('tr_favs',[]),customs:lsg('tr_customs',[]),session:lsg('tr_session',{}),sessionHist:{},flatLogs:{}},
+    rob:{daytype:lsg('tr_daytype','session'),flatTgts:lsg('tr_flat_tgts',DEFAULT_ROB_FLAT),mealTgts:lsg('tr_meal_tgts',DEFAULT_MEAL_TGTS),easyMealTgts:lsg('tr_easy_meal_tgts',DEFAULT_EASY_MEAL_TGTS),favs:lsg('tr_favs',[]),customs:lsg('tr_customs',[]),sessionLogs:{},flatLogs:{}},
     hanna:{daytype:lsg('hanna_daytype','hard'),targets:lsg('hanna_targets',DEFAULT_HANNA_TGTS),favs:lsg('hanna_favs',[]),customs:lsg('hanna_customs',[]),logs:{},daytypes:{}}
   };
   for(let i=0;i<14;i++){
     const d=new Date(today);d.setDate(d.getDate()-i);const k=dateKey(d);
-    const sh=lsg('tr_session_hist_'+k,null),fl=lsg('tr_flat_'+k,null);
-    if(sh)data.rob.sessionHist[k]=sh;if(fl&&fl.length)data.rob.flatLogs[k]=fl;
+    const sl=lsg('tr_session_'+k,null),fl=lsg('tr_flat_'+k,null);
+    if(sl&&Object.values(sl).some(a=>a.length))data.rob.sessionLogs[k]=sl;if(fl&&fl.length)data.rob.flatLogs[k]=fl;
     const hl=lsg('hanna_log_'+k,null),hdt=lsg('hanna_daytype_'+k,null);
     if(hl&&hl.length)data.hanna.logs[k]=hl;if(hdt)data.hanna.daytypes[k]=hdt;
   }
@@ -975,8 +964,8 @@ function importBackup(){
     if(data.version===3&&data.rob&&data.hanna){
       if(!confirm('Restore all data for both Rob and Hanna from this backup?'))return;
       const r=data.rob,h=data.hanna;
-      lss('tr_daytype',r.daytype||'session');lss('tr_flat_tgts',r.flatTgts||DEFAULT_ROB_FLAT);lss('tr_meal_tgts',r.mealTgts||DEFAULT_MEAL_TGTS);lss('tr_easy_meal_tgts',r.easyMealTgts||DEFAULT_EASY_MEAL_TGTS);lss('tr_favs',r.favs||[]);lss('tr_customs',r.customs||[]);lss('tr_session',r.session||{});
-      Object.entries(r.sessionHist||{}).forEach(([k,v])=>lss('tr_session_hist_'+k,v));Object.entries(r.flatLogs||{}).forEach(([k,v])=>lss('tr_flat_'+k,v));
+      lss('tr_daytype',r.daytype||'session');lss('tr_flat_tgts',r.flatTgts||DEFAULT_ROB_FLAT);lss('tr_meal_tgts',r.mealTgts||DEFAULT_MEAL_TGTS);lss('tr_easy_meal_tgts',r.easyMealTgts||DEFAULT_EASY_MEAL_TGTS);lss('tr_favs',r.favs||[]);lss('tr_customs',r.customs||[]);
+      Object.entries(r.sessionLogs||{}).forEach(([k,v])=>lss('tr_session_'+k,v));Object.entries(r.flatLogs||{}).forEach(([k,v])=>lss('tr_flat_'+k,v));
       lss('hanna_daytype',h.daytype||'hard');lss('hanna_targets',h.targets||DEFAULT_HANNA_TGTS);lss('hanna_favs',h.favs||[]);lss('hanna_customs',h.customs||[]);
       Object.entries(h.logs||{}).forEach(([k,v])=>lss('hanna_log_'+k,v));Object.entries(h.daytypes||{}).forEach(([k,v])=>lss('hanna_daytype_'+k,v));
       loadState();renderAll();closeSheet('sheet-backup');showSaved();alert('Restored successfully.');return;
@@ -994,7 +983,7 @@ function importBackup(){
     // v1: Training app backup
     if(data.version===1&&(data.session||data.mealTgts)){
       if(!confirm('This looks like a Training app backup. Import Rob\'s data?'))return;
-      if(data.session){const s=data.session;MEAL_IDS.forEach(id=>{if(!s[id])s[id]=[];});lss('tr_session',s);}
+      if(data.session){const s=data.session;MEAL_IDS.forEach(id=>{if(!s[id])s[id]=[];});lss('tr_session_'+todayKey(),s);}
       if(data.favs)lss('tr_favs',data.favs);if(data.customs)lss('tr_customs',data.customs);if(data.flatTgts)lss('tr_flat_tgts',data.flatTgts);if(data.mealTgts)lss('tr_meal_tgts',data.mealTgts);if(data.easyMealTgts)lss('tr_easy_meal_tgts',data.easyMealTgts);
       if(data.history)Object.entries(data.history).forEach(([k,v])=>lss('tr_session_hist_'+k,v));if(data.flatHistory)Object.entries(data.flatHistory).forEach(([k,v])=>lss('tr_flat_'+k,v));
       loadState();renderAll();closeSheet('sheet-backup');showSaved();alert('Imported from Training app backup.');return;

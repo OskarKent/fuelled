@@ -32,6 +32,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;over
 .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
 .header-right-row{display:flex;gap:8px;align-items:center;}
 .settings-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px;line-height:1;}
+.reset-btn{background:none;border:1px solid #333;color:var(--muted);border-radius:6px;padding:4px 10px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
 .day-toggle{display:flex;background:var(--surface);border-radius:8px;padding:3px;gap:2px;}
 .toggle-btn{padding:5px 8px;border-radius:6px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:all .15s;background:transparent;color:var(--muted);}
 .toggle-btn.ah{background:var(--hard);color:#000;}.toggle-btn.ae{background:var(--easy);color:#000;}
@@ -202,6 +203,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;over
     <div class="header-right">
       <div class="header-right-row">
         <button class="settings-btn" onclick="openSettings()">&#9881;</button>
+        <button class="reset-btn" id="reset-btn" onclick="confirmReset()">&#8635; New day</button>
       </div>
       <div class="day-toggle" id="day-toggle"></div>
     </div>
@@ -553,6 +555,7 @@ function renderAll(){
 
   // Show/hide panels
   const showMeal=isMealDay();
+  document.getElementById('reset-btn').classList.toggle('hidden',!isRob());
   document.getElementById('session-summary').classList.toggle('hidden',!showMeal);
   document.getElementById('flat-macros').classList.toggle('hidden',showMeal);
   document.getElementById('meals-scroll').classList.toggle('hidden',!showMeal);
@@ -810,6 +813,19 @@ function filterFoods(){
 function showClear(){if(document.getElementById('food-search').value)document.getElementById('search-clear').style.display='block';}
 function hideClear(){setTimeout(()=>document.getElementById('search-clear').style.display='none',150);}
 function clearSearch(e){e.preventDefault();const inp=document.getElementById('food-search');inp.value='';filterFoods();inp.focus();document.getElementById('search-clear').style.display='none';}
+
+function confirmReset(){
+  if(!confirm('Start a new cycle? Current meal logs will be saved to history and cleared.'))return;
+  const key=todayKey();
+  const existing=lsg('tr_session_'+key,{});
+  // Merge current into existing (in case of multiple resets on same day)
+  const merged={};
+  MEAL_IDS.forEach(id=>merged[id]=[...(existing[id]||[]),...(sessionLog[id]||[])]);
+  lss('tr_session_'+key,merged);
+  const empty={};MEAL_IDS.forEach(id=>empty[id]=[]);
+  sessionLog=empty;lss('tr_session_'+todayKey(),sessionLog);
+  showSaved();renderAll();
+}
 
 // ── History ────────────────────────────────────────────
 function renderHistory(){

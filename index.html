@@ -399,11 +399,11 @@ const FOOD_DB_DEFAULT=[{"name":"Ace Bakery Bread","unit":"g","cal100":237.2,"pro
 
 // ── Meal config (Rob) ──────────────────────────────────
 const MEALS=[
+  {id:'snack',     label:'Snack',     color:'#ff6b35'},
   {id:'dinner',    label:'Dinner',    color:'#f472b6'},
   {id:'pre_run',   label:'Pre-Run',   color:'#47c4ff'},
   {id:'breakfast', label:'Breakfast', color:'#e8ff47'},
-  {id:'lunch',     label:'Lunch',     color:'#34d399'},
-  {id:'snack',     label:'Snack',     color:'#ff6b35'}
+  {id:'lunch',     label:'Lunch',     color:'#34d399'}
 ];
 const MEAL_IDS=MEALS.map(m=>m.id);
 
@@ -411,11 +411,11 @@ const MEAL_IDS=MEALS.map(m=>m.id);
 const DEFAULT_HANNA_TGTS={hard:{cal:2800,protein:190,carbs:300},easy:{cal:2200,protein:185,carbs:200},rest:{cal:1900,protein:180,carbs:150}};
 const DEFAULT_ROB_FLAT={rest:{cal:1900,protein:180,carbs:150}};
 const DEFAULT_ROB_MEAL_TGTS={
-  long:   {dinner:{carb:280,prot:35},pre_run:{carb:80,prot:0},breakfast:{carb:200,prot:40},lunch:{carb:160,prot:35},snack:{carb:80,prot:25}},
-  speed:  {dinner:{carb:185,prot:35},pre_run:{carb:55,prot:0},breakfast:{carb:135,prot:40},lunch:{carb:110,prot:35},snack:{carb:55,prot:25}},
-  easy:   {dinner:{carb:145,prot:35},pre_run:{carb:40,prot:0},breakfast:{carb:105,prot:40},lunch:{carb:85, prot:35},snack:{carb:45,prot:25}},
-  support:{dinner:{carb:125,prot:35},pre_run:{carb:35,prot:0},breakfast:{carb:90, prot:40},lunch:{carb:72, prot:35},snack:{carb:38,prot:25}},
-  off:    {dinner:{carb:90, prot:35},pre_run:{carb:25,prot:0},breakfast:{carb:65, prot:40},lunch:{carb:52, prot:35},snack:{carb:28,prot:25}}
+  long:   {snack:{carb:80,prot:25},dinner:{carb:280,prot:35},pre_run:{carb:80,prot:0},breakfast:{carb:200,prot:40},lunch:{carb:160,prot:35}},
+  speed:  {snack:{carb:55,prot:25},dinner:{carb:185,prot:35},pre_run:{carb:55,prot:0},breakfast:{carb:135,prot:40},lunch:{carb:110,prot:35}},
+  easy:   {snack:{carb:45,prot:25},dinner:{carb:145,prot:35},pre_run:{carb:40,prot:0},breakfast:{carb:105,prot:40},lunch:{carb:85, prot:35}},
+  support:{snack:{carb:38,prot:25},dinner:{carb:125,prot:35},pre_run:{carb:35,prot:0},breakfast:{carb:90, prot:40},lunch:{carb:72, prot:35}},
+  off:    {snack:{carb:28,prot:25},dinner:{carb:90, prot:35},pre_run:{carb:25,prot:0},breakfast:{carb:65, prot:40},lunch:{carb:52, prot:35}}
 };
 
 // ── Utils ──────────────────────────────────────────────
@@ -458,7 +458,7 @@ let activeUser=lsg('active_user','hanna');
 let dayType,hannaTgts,robFlatTgts,mealTgts,easyMealTgts,favs,flatLog,sessionLog,customs;
 let FOOD_DB_BASE=FOOD_DB_DEFAULT,FOOD_DB,filtered;
 let robMealTgts=DEFAULT_ROB_MEAL_TGTS;
-let activeFood=null,activeMeal='dinner',activeFavMeal='dinner';
+let activeFood=null,activeMeal='snack',activeFavMeal='snack';
 let editFoodOrig=null,editUnit='g',editLogId=null,editLogMeal=null;
 let savedTimer=null;
 

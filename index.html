@@ -403,7 +403,7 @@ const FOOD_DB_DEFAULT=[{"name":"Ace Bakery Bread","unit":"g","cal100":237.2,"pro
 const MEALS=[
   {id:'snack',     label:'Snack',     color:'#ff6b35'},
   {id:'dinner',    label:'Dinner',    color:'#f472b6'},
-  {id:'pre_run',   label:'Pre-Run',   color:'#47c4ff'},
+  {id:'pre_run',   label:'Pre-Run/Run', color:'#47c4ff'},
   {id:'breakfast', label:'Breakfast', color:'#e8ff47'},
   {id:'lunch',     label:'Lunch',     color:'#34d399'}
 ];
@@ -445,7 +445,7 @@ function uk(k){
   // Rob uses tr_ prefix for training-specific keys
   const robKeyMap={
     daytype:'tr_daytype', favs:'tr_favs', customs:'tr_customs',
-    session:'tr_session_'+todayKey(),
+    session:'tr_session',
     daytype:'tr_daytype'
   };
   if(robKeyMap[k]) return robKeyMap[k];
@@ -474,7 +474,7 @@ function loadState(){
       MEAL_IDS.forEach(id=>{if(!robMealTgts[dt][id])robMealTgts[dt][id]={...DEFAULT_ROB_MEAL_TGTS[dt][id]};});
     });
     favs         = lsg('tr_favs',[]);
-    sessionLog   = lsg('tr_session_'+todayKey(),{});
+    sessionLog   = lsg('tr_session',{});
     MEAL_IDS.forEach(id=>{if(!sessionLog[id])sessionLog[id]=[];});
     customs      = lsg('tr_customs',[]);
     lss('tr_daytype_'+todayKey(),dayType);
@@ -706,7 +706,7 @@ function doLog(){
   if(isMealDay()){
     if(editLogId&&editLogMeal){const orig=sessionLog[editLogMeal].find(e=>e.id===editLogId);if(orig)entry.time=orig.time;sessionLog[editLogMeal]=sessionLog[editLogMeal].map(e=>e.id===editLogId?entry:e);}
     else sessionLog[activeMeal].push(entry);
-    lss('tr_session_'+todayKey(),sessionLog);
+    lss('tr_session',sessionLog);
   } else {
     if(editLogId){const orig=flatLog.find(e=>e.id===editLogId);if(orig)entry.time=orig.time;flatLog=flatLog.map(e=>e.id===editLogId?entry:e);}
     else flatLog.push(entry);
@@ -745,7 +745,7 @@ function openFlatEdit(entryId){
   document.getElementById('fd-fav-btn').style.display='none';
   showFoodSheet();
 }
-function removeSessionEntry(mealId,entryId){sessionLog[mealId]=sessionLog[mealId].filter(e=>e.id!==entryId);lss('tr_session_'+todayKey(),sessionLog);renderAll();}
+function removeSessionEntry(mealId,entryId){sessionLog[mealId]=sessionLog[mealId].filter(e=>e.id!==entryId);lss('tr_session',sessionLog);renderAll();}
 function removeFlatEntry(id){
   flatLog=flatLog.filter(e=>e.id!==id);
   isRob()?lss('tr_flat_'+todayKey(),flatLog):lss('hanna_log_'+todayKey(),flatLog);renderAll();
@@ -782,7 +782,7 @@ function renderFavs(){
 function logFav(id){
   const f=favs.find(x=>x.id===id);if(!f)return;
   const entry={id:Date.now()+'',name:f.name,portion:f.portion,cal:f.cal,protein:f.protein,carbs:f.carbs||0,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
-  if(isMealDay()){sessionLog[activeFavMeal].push(entry);lss('tr_session_'+todayKey(),sessionLog);}
+  if(isMealDay()){sessionLog[activeFavMeal].push(entry);lss('tr_session',sessionLog);}
   else{flatLog.push(entry);isRob()?lss('tr_flat_'+todayKey(),flatLog):lss('hanna_log_'+todayKey(),flatLog);}
   showSaved();setTab('log');renderAll();
 }
@@ -818,12 +818,11 @@ function confirmReset(){
   if(!confirm('Start a new cycle? Current meal logs will be saved to history and cleared.'))return;
   const key=todayKey();
   const existing=lsg('tr_session_'+key,{});
-  // Merge current into existing (in case of multiple resets on same day)
   const merged={};
   MEAL_IDS.forEach(id=>merged[id]=[...(existing[id]||[]),...(sessionLog[id]||[])]);
   lss('tr_session_'+key,merged);
   const empty={};MEAL_IDS.forEach(id=>empty[id]=[]);
-  sessionLog=empty;lss('tr_session_'+todayKey(),sessionLog);
+  sessionLog=empty;lss('tr_session',sessionLog);
   showSaved();renderAll();
 }
 
@@ -995,7 +994,7 @@ function importBackup(){
     // v1: Training app backup
     if(data.version===1&&(data.session||data.mealTgts)){
       if(!confirm('This looks like a Training app backup. Import Rob\'s data?'))return;
-      if(data.session){const s=data.session;MEAL_IDS.forEach(id=>{if(!s[id])s[id]=[];});lss('tr_session_'+todayKey(),s);}
+      if(data.session){const s=data.session;MEAL_IDS.forEach(id=>{if(!s[id])s[id]=[];});lss('tr_session',s);}
       if(data.favs)lss('tr_favs',data.favs);if(data.customs)lss('tr_customs',data.customs);if(data.flatTgts)lss('tr_flat_tgts',data.flatTgts);if(data.mealTgts)lss('tr_meal_tgts',data.mealTgts);if(data.easyMealTgts)lss('tr_easy_meal_tgts',data.easyMealTgts);
       if(data.history)Object.entries(data.history).forEach(([k,v])=>lss('tr_session_hist_'+k,v));if(data.flatHistory)Object.entries(data.flatHistory).forEach(([k,v])=>lss('tr_flat_'+k,v));
       loadState();renderAll();closeSheet('sheet-backup');showSaved();alert('Imported from Training app backup.');return;

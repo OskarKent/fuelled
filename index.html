@@ -660,7 +660,7 @@ function setMacro(id,val,tgt,unit,barCls){
 }
 
 // ── Food sheet ─────────────────────────────────────────
-function openFoodForMeal(mealId){activeMeal=mealId;editLogId=null;editLogMeal=null;document.getElementById('fd-log-btn').textContent='Log it';document.getElementById('fd-fav-btn').style.display='';showFoodSheet();}
+function openFoodForMeal(mealId){activeMeal=mealId;editLogId=null;editLogMeal=null;setTab('foods');}
 function openFoodFromList(idx){activeFood=filtered[idx];editLogId=null;editLogMeal=null;activeMeal=isMealDay()?'pre_run':null;document.getElementById('fd-log-btn').textContent='Log it';document.getElementById('fd-fav-btn').style.display='';showFoodSheet();}
 function showFoodSheet(){
   if(!activeFood)return;
@@ -848,41 +848,12 @@ function renderHistory(){
       const mTgts=robMealTgts[dt]||DEFAULT_ROB_MEAL_TGTS[dt]||DEFAULT_ROB_MEAL_TGTS.long;
       const totCarb=MEALS.reduce((a,m)=>a+(mTgts[m.id]?.carb||0),0);
       const totProt=MEALS.reduce((a,m)=>a+(mTgts[m.id]?.prot||0),0);
-      const mealRows=MEALS.map(m=>{
-        const entries=(sessData||{})[m.id]||[];
-        const mc=entries.reduce((a,e)=>a+(e.carbs||0),0);
-        const mp=entries.reduce((a,e)=>a+e.protein,0);
-        const mt=mTgts[m.id]||{carb:0,prot:0};
-        const cp=pct(mc,mt.carb),pp=pct(mp,mt.prot);
-        return '<div class="hist-meal-row">'+
-          '<span class="hist-meal-name" style="color:'+m.color+'">'+m.label+'</span>'+
-          '<div class="hist-meal-bars">'+
-            '<div class="hist-mini-row">'+
-              '<span class="hist-mini-label" style="color:var(--carb)">C</span>'+
-              '<div class="hist-mini-track"><div class="hist-mini-fill '+(cp>=100?'bover':'bcarb')+'" style="width:'+cp+'%"></div></div>'+
-              '<span class="hist-mini-val" style="color:var(--carb)">'+rnd(mc)+'</span>'+
-            '</div>'+
-            '<div class="hist-mini-row">'+
-              '<span class="hist-mini-label" style="color:var(--prot)">P</span>'+
-              '<div class="hist-mini-track"><div class="hist-mini-fill '+(pp>=100?'bover':'bprot')+'" style="width:'+pp+'%"></div></div>'+
-              '<span class="hist-mini-val" style="color:var(--prot)">'+rnd(mp)+'</span>'+
-            '</div>'+
-          '</div>'+
-        '</div>';
-      }).join('');
       html.push('<div class="hist-day'+(isToday?' today':'')+'">'+
-        '<div class="hist-date"><span>'+label+'</span>'+
-          '<span style="display:flex;gap:6px;align-items:center">'+
-            (isToday?'<span class="today-lbl">TODAY</span>':'')+
-            '<span class="hist-type">'+dt.toUpperCase()+'</span>'+
-          '</span>'+
-        '</div>'+
-        '<div style="display:flex;justify-content:flex-end;gap:14px;margin-bottom:8px">'+
-          '<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;color:var(--carb)">C: <b>'+rnd(dcb)+'</b><span style="color:var(--muted)">/'+totCarb+'g</span></span>'+
-          '<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;color:var(--prot)">P: <b>'+rnd(dp)+'</b><span style="color:var(--muted)">/'+totProt+'g</span></span>'+
-        '</div>'+
-        '<div class="hist-meals">'+mealRows+'</div>'+
-      '</div>');
+        '<div class="hist-date"><span>'+label+'</span><span style="display:flex;gap:6px">'+(isToday?'<span class="today-lbl">TODAY</span>':'')+'<span class="hist-type">'+dt.toUpperCase()+'</span></span></div>'+
+        '<div class="hist-macros">'+
+          macroBar(dp,totProt,'p','bprot','g')+
+          macroBar(dcb,totCarb,'cb','bcarb','g')+
+        '</div></div>');
     } else {
       dt=lsg('hanna_daytype_'+key,isToday?dayType:'easy');
       const dl=isToday?flatLog:lsg('hanna_log_'+key,[]);

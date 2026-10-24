@@ -520,7 +520,7 @@ function setTab(t){
   });
   if(t==='foods')setTimeout(()=>document.getElementById('food-search').focus(),150);
   if(t==='history')renderHistory();
-  if(t==='favs')renderFavMealTabs();
+  if(t==='favs'){if(isMealDay()&&activeMeal)activeFavMeal=activeMeal;renderFavMealTabs();}
 }
 
 // ── User switch ────────────────────────────────────────
@@ -851,6 +851,7 @@ function renderHistory(){
       html.push('<div class="hist-day'+(isToday?' today':'')+'">'+
         '<div class="hist-date"><span>'+label+'</span><span style="display:flex;gap:6px">'+(isToday?'<span class="today-lbl">TODAY</span>':'')+'<span class="hist-type">'+dt.toUpperCase()+'</span></span></div>'+
         '<div class="hist-macros">'+
+          macroBar(dc,0,'c','bcal','')+
           macroBar(dp,totProt,'p','bprot','g')+
           macroBar(dcb,totCarb,'cb','bcarb','g')+
         '</div></div>');
@@ -872,8 +873,10 @@ function renderHistory(){
   document.getElementById('history-scroll').innerHTML=html.join('');
 }
 function macroBar(val,tv,cls,bc,unit){
-  const p=pct(val,tv);
-  return '<div class="hist-mac"><div class="hist-mac-top"><span class="hist-mac-label">'+(cls==='c'?'Cal':cls==='p'?'Prot':'Carbs')+'</span><span class="hist-mac-val '+cls+'">'+rnd(val)+unit+'</span></div><div class="hist-mac-tgt">/ '+tv+unit+'</div><div class="hist-bar-track"><div class="hist-bar-fill '+(p>=100?'bover':bc)+'" style="width:'+p+'%"></div></div></div>';
+  const p=tv?pct(val,tv):0;
+  const tgtLine=tv?'<div class="hist-mac-tgt">/ '+tv+unit+'</div>':'<div class="hist-mac-tgt">&nbsp;</div>';
+  const barLine=tv?'<div class="hist-bar-track"><div class="hist-bar-fill '+(p>=100?'bover':bc)+'" style="width:'+p+'%"></div></div>':'<div class="hist-bar-track"></div>';
+  return '<div class="hist-mac"><div class="hist-mac-top"><span class="hist-mac-label">'+(cls==='c'?'Cal':cls==='p'?'Prot':'Carbs')+'</span><span class="hist-mac-val '+cls+'">'+rnd(val)+unit+'</span></div>'+tgtLine+barLine+'</div>';
 }
 
 // ── Add/edit food ──────────────────────────────────────

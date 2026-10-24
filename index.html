@@ -661,7 +661,7 @@ function setMacro(id,val,tgt,unit,barCls){
 
 // ── Food sheet ─────────────────────────────────────────
 function openFoodForMeal(mealId){activeMeal=mealId;editLogId=null;editLogMeal=null;setTab('foods');}
-function openFoodFromList(idx){activeFood=filtered[idx];editLogId=null;editLogMeal=null;activeMeal=isMealDay()?'pre_run':null;document.getElementById('fd-log-btn').textContent='Log it';document.getElementById('fd-fav-btn').style.display='';showFoodSheet();}
+function openFoodFromList(idx){activeFood=filtered[idx];editLogId=null;editLogMeal=null;if(isMealDay()&&(!activeMeal||!MEAL_IDS.includes(activeMeal)))activeMeal=MEAL_IDS[0];else if(!isMealDay())activeMeal=null;document.getElementById('fd-log-btn').textContent='Log it';document.getElementById('fd-fav-btn').style.display='';showFoodSheet();}
 function showFoodSheet(){
   if(!activeFood)return;
   const e=activeFood.unit==='each';
